@@ -416,7 +416,7 @@ function renderMap() {
         .join(" | ");
       return `
       <g class='map-spot' data-spot-id='${spot.id}'>
-        <image href='img/loc_icon.png' x='${p.px - 27}' y='${p.py - 48}' width='54' height='54'></image>
+        <image href='img/loc_icon.webp' x='${p.px - 27}' y='${p.py - 48}' width='54' height='54'></image>
         <text x='${p.px}' y='${p.py + 28}' text-anchor='middle' font-size='20' fill='#111827' stroke='white' stroke-width='6' paint-order='stroke'>${spot.displayName}</text>
         <text x='${p.px}' y='${p.py + 28}' text-anchor='middle' font-size='20' fill='#111827'>${spot.displayName}</text>
         <title>${spot.displayName}${dirTips ? `\n可达：${dirTips}` : ""}</title>
