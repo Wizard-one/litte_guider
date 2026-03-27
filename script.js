@@ -74,6 +74,61 @@ function loadCalibrationOffsets() {
   }
 }
 
+function mergeCalibrationOffsets(fromJson, fromStorage) {
+  const merged = { ...(fromStorage || {}) };
+  if (!fromJson || typeof fromJson !== "object") {
+    return merged;
+  }
+  Object.entries(fromJson).forEach(([spotId, offset]) => {
+    if (!offset || typeof offset !== "object") {
+      return;
+    }
+    merged[spotId] = {
+      dx: Number(offset.dx || 0),
+      dy: Number(offset.dy || 0)
+    };
+  });
+  return merged;
+}
+
+function splitLocConfig(raw) {
+  const hasLocations = raw && typeof raw === "object" && raw.locations && typeof raw.locations === "object";
+  if (hasLocations) {
+    return {
+      locations: raw.locations,
+      calibrationOffsets: raw.calibrationOffsets || {}
+    };
+  }
+
+  const extractedOffsets = {};
+  if (raw && typeof raw === "object") {
+    Object.entries(raw).forEach(([spotId, cfg]) => {
+      if (!cfg || typeof cfg !== "object") {
+        return;
+      }
+      const mergedOffset = cfg.offset || cfg.calibrationOffset;
+      if (mergedOffset && typeof mergedOffset === "object") {
+        extractedOffsets[spotId] = {
+          dx: Number(mergedOffset.dx || 0),
+          dy: Number(mergedOffset.dy || 0)
+        };
+        return;
+      }
+      if ("dx" in cfg || "dy" in cfg) {
+        extractedOffsets[spotId] = {
+          dx: Number(cfg.dx || 0),
+          dy: Number(cfg.dy || 0)
+        };
+      }
+    });
+  }
+
+  return {
+    locations: raw || {},
+    calibrationOffsets: extractedOffsets
+  };
+}
+
 function saveCalibrationOffsets() {
   localStorage.setItem(CALIBRATION_STORAGE_KEY, JSON.stringify(calibrationOffsets));
 }
@@ -709,8 +764,12 @@ async function init() {
     throw new Error("loc.json 读取失败");
   }
 
-  const locData = await response.json();
-  spots = normalizeSpots(locData);
+  const rawConfig = await response.json();
+  const { locations, calibrationOffsets: jsonOffsets } = splitLocConfig(rawConfig);
+  calibrationOffsets = mergeCalibrationOffsets(jsonOffsets, calibrationOffsets);
+  saveCalibrationOffsets();
+
+  spots = normalizeSpots(locations);
   spotById = Object.fromEntries(spots.map((spot) => [spot.id, spot]));
 
   renderSpotPool();
