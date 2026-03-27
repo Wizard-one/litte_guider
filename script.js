@@ -531,7 +531,7 @@ function addRouteToken(token) {
       isPlaying = false;
       updateSpotCard(toToken.value);
       updatePathPolyline(getSpotIdsFromTokens());
-      stepInfo.textContent = `已到达：${spotById[toToken.value].displayName}`;
+      setArrivedStepInfo(toToken.value);
       const spotCount = getSpotIdsFromTokens().length;
       if (spotCount >= 3) {
         setMessage("当前路径合法，可点击“开始演示”重播完整路线。", "ok");
@@ -596,6 +596,23 @@ function updateSpotCard(spotId) {
   spotTitle.textContent = spot.displayName;
   spotDesc.textContent = nextNames.length ? `可前往：${nextNames.join("、")}` : "当前地点没有可通行节点。";
   spotImage.src = `img/${encodeURIComponent(spot.image)}`;
+}
+
+function getReachableText(spotId) {
+  const spot = spotById[spotId];
+  if (!spot) {
+    return "可前往：无";
+  }
+  const nextNames = spot.connectedTo.map((id) => spotById[id]?.displayName).filter(Boolean);
+  return nextNames.length ? `可前往：${nextNames.join("、")}` : "可前往：无";
+}
+
+function setArrivedStepInfo(spotId) {
+  const spot = spotById[spotId];
+  if (!spot) {
+    return;
+  }
+  stepInfo.textContent = `已到达：${spot.displayName}\n${getReachableText(spotId)}`;
 }
 
 function buildPathFromTokens() {
@@ -688,7 +705,7 @@ function animatePath(spotIds, done) {
     animateBetween(fromPoint, toPoint, 800, () => {
       index += 1;
       updateSpotCard(toId);
-      stepInfo.textContent = `已到达：${spotById[toId].displayName}`;
+      setArrivedStepInfo(toId);
       // Pause briefly at each arrived spot so the card matches the current map point.
       setTimeout(playNextSegment, ARRIVAL_DWELL_MS);
     });

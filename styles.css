@@ -304,6 +304,7 @@ button {
   margin-top: 8px;
   color: #334155;
   min-height: 28px;
+  white-space: pre-line;
 }
 
 .calibration-tools {
