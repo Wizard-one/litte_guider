@@ -80,10 +80,16 @@ body {
   margin-bottom: 8px;
 }
 
-.spot-pool,
-.direction-pool {
+.spot-pool {
   display: grid;
   grid-template-columns: repeat(3, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.direction-pool {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  grid-template-rows: repeat(2, auto);
   gap: 8px;
 }
 
@@ -340,8 +346,7 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .spot-pool,
-  .direction-pool {
+  .spot-pool {
     grid-template-columns: repeat(2, minmax(96px, 1fr));
   }
 }
