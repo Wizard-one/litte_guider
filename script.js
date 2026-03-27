@@ -45,6 +45,10 @@ let spotById = {};
 let animationFrameId = null;
 let isPlaying = false;
 
+function getSpotIdsFromTokens() {
+  return routeTokens.filter((item) => item.type === "spot").map((item) => item.value);
+}
+
 function getPointBySpotId(spotId) {
   const spot = spotById[spotId];
   return {
@@ -66,6 +70,30 @@ function directionBetween(from, to) {
     return from.x > to.x ? "W" : "E";
   }
   return null;
+}
+
+function validateSegment(fromId, providedDir, toId) {
+  const from = spotById[fromId];
+  const to = spotById[toId];
+  if (!from || !to) {
+    return {
+      ok: false,
+      errorText: `x 无法通行: 从${from?.displayName || "未知地点"} 向 ${DIRECTIONS[providedDir]?.label || providedDir} 没有路哦`
+    };
+  }
+
+  const expectedDir = directionBetween(from, to);
+  const isConnected = from.connectedTo.includes(to.id);
+  const isDirectionRight = expectedDir && providedDir === expectedDir;
+
+  if (!isConnected || !isDirectionRight) {
+    return {
+      ok: false,
+      errorText: `x 无法通行: 从${from.displayName} 向 ${DIRECTIONS[providedDir]?.label || providedDir} 没有路哦`
+    };
+  }
+
+  return { ok: true };
 }
 
 function getUsedSpotIds() {
@@ -211,6 +239,56 @@ function addRouteToken(token) {
 
   routeTokens.push(token);
   renderRouteTokens();
+
+  if (token.type === "spot") {
+    updateSpotCard(token.value);
+    const spotIds = getSpotIdsFromTokens();
+    if (spotIds.length === 1) {
+      const firstPoint = getPointBySpotId(spotIds[0]);
+      playerAvatar.setAttribute("visibility", "visible");
+      setAvatarPosition(firstPoint);
+      updatePathPolyline(spotIds);
+      stepInfo.textContent = `已选择起点：${spotById[spotIds[0]].displayName}`;
+      setMessage("已选择起点，请继续拖拽方向与下一地点。", "ok");
+      return;
+    }
+  }
+
+  if (token.type === "spot" && routeTokens.length >= 3) {
+    const fromToken = routeTokens[routeTokens.length - 3];
+    const directionToken = routeTokens[routeTokens.length - 2];
+    const toToken = routeTokens[routeTokens.length - 1];
+
+    const segmentResult = validateSegment(fromToken.value, directionToken.value, toToken.value);
+    if (!segmentResult.ok) {
+      routeTokens.splice(routeTokens.length - 2, 2);
+      renderRouteTokens();
+      updateSpotCard(fromToken.value);
+      updatePathPolyline(getSpotIdsFromTokens());
+      setMessage(segmentResult.errorText, "bad");
+      alert(segmentResult.errorText);
+      return;
+    }
+
+    const fromPoint = getPointBySpotId(fromToken.value);
+    const toPoint = getPointBySpotId(toToken.value);
+    isPlaying = true;
+    stepInfo.textContent = `从 ${spotById[fromToken.value].displayName} 前往 ${spotById[toToken.value].displayName}...`;
+    animateBetween(fromPoint, toPoint, 800, () => {
+      isPlaying = false;
+      updateSpotCard(toToken.value);
+      updatePathPolyline(getSpotIdsFromTokens());
+      stepInfo.textContent = `已到达：${spotById[toToken.value].displayName}`;
+      const spotCount = getSpotIdsFromTokens().length;
+      if (spotCount >= 3) {
+        setMessage("当前路径合法，可点击“开始演示”重播完整路线。", "ok");
+      } else {
+        setMessage("该段路径合法，请继续拖拽下一段。", "ok");
+      }
+    });
+    return;
+  }
+
   setMessage("路线已更新。", "ok");
 }
 
@@ -275,7 +353,7 @@ function buildPathFromTokens() {
     return { error: "路线必须以地点结束，保持地点与方向交替。" };
   }
 
-  const spotIds = routeTokens.filter((item) => item.type === "spot").map((item) => item.value);
+  const spotIds = getSpotIdsFromTokens();
   const directions = routeTokens.filter((item) => item.type === "direction").map((item) => item.value);
 
   if (spotIds.length < 3) {
@@ -283,21 +361,12 @@ function buildPathFromTokens() {
   }
 
   for (let i = 0; i < spotIds.length - 1; i += 1) {
-    const from = spotById[spotIds[i]];
-    const to = spotById[spotIds[i + 1]];
+    const fromId = spotIds[i];
+    const toId = spotIds[i + 1];
     const provided = directions[i];
-    const expected = directionBetween(from, to);
-
-    const connected = from.connectedTo.includes(to.id);
-    const directionCorrect = expected && provided === expected;
-
-    if (!connected || !directionCorrect) {
-      return {
-        error: {
-          fromName: from.displayName,
-          directionLabel: DIRECTIONS[provided]?.label || provided
-        }
-      };
+    const segmentResult = validateSegment(fromId, provided, toId);
+    if (!segmentResult.ok) {
+      return { error: segmentResult.errorText };
     }
   }
 
@@ -382,14 +451,8 @@ function handleStart() {
 
   const compiled = buildPathFromTokens();
   if (compiled.error) {
-    if (typeof compiled.error === "string") {
-      setMessage(compiled.error, "warn");
-      return;
-    }
-
-    const errorText = `x 无法通行: 从${compiled.error.fromName} 向 ${compiled.error.directionLabel} 没有路哦`;
-    setMessage(errorText, "bad");
-    alert(errorText);
+    setMessage(compiled.error, "bad");
+    alert(compiled.error);
     return;
   }
 
