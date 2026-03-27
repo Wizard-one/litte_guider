@@ -3,33 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>校园小导游 · 第一人称游戏</title>
+  <title>校园小导游 · 路线挑战</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="app">
     <header class="topbar">
-      <h1>校园小导游 · 第一人称挑战</h1>
-      <p>左侧看地图，右侧拖拽景点和方向，生成你的导游路线并开始演示。</p>
+      <h1>校园小导游 · 路线挑战</h1>
+      <p>请按“地点 → 方向 → 地点”拖拽路线，系统会按地图道路播放avatar移动动画。</p>
     </header>
 
     <section class="main-grid">
       <article class="panel map-panel">
-        <h2>校园地图（6个地点）</h2>
+        <h2>校园地图</h2>
         <svg id="campusMap" viewBox="0 0 600 420" class="campus-map" aria-label="校园地图">
           <rect x="0" y="0" width="600" height="420" fill="#f8fafc"></rect>
-          <g id="grid"></g>
           <g id="roads"></g>
           <g id="spotLayer"></g>
           <polyline id="userPath" fill="none" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></polyline>
-          <circle id="playerDot" cx="60" cy="360" r="10" fill="#ef4444"></circle>
+          <image id="playerAvatar" href="img/avatar.png" width="34" height="34" visibility="hidden"></image>
         </svg>
         <div id="stepInfo" class="step-info">等待开始演示...</div>
       </article>
 
       <article class="panel operation-panel">
         <h2>操作面板</h2>
-        <p class="hint">起点固定为校门。请按“地点 → 方向 → 地点”交替拖拽，地点不能重复。</p>
+        <p class="hint">请按“地点 → 方向 → 地点”交替拖拽，地点不能重复，且至少经过3个地点才算合法。</p>
 
         <h3>选景点</h3>
         <div id="spotPool" class="spot-pool" aria-label="景点拖拽池"></div>
@@ -57,36 +56,13 @@
       </article>
     </section>
 
-    <section class="viewer-grid">
-      <article class="panel viewport-panel">
-        <h2>第一人称动画视角</h2>
-        <div id="firstPersonView" class="first-person-view">
-          <div class="horizon"></div>
-          <div class="path"></div>
-          <div id="fpStatus" class="fp-status">我在：校门（朝向北）</div>
-        </div>
-        <div class="timeline-wrap">
-          <div id="timeline" class="timeline"></div>
-        </div>
-      </article>
-
+    <section class="single-grid">
       <article class="panel spot-panel">
         <h2>当前景点图文</h2>
-        <img id="spotImage" class="spot-image" alt="景点示意图" />
-        <h3 id="spotTitle">校门</h3>
-        <p id="spotDesc">从这里出发，开始你的校园导览。</p>
+        <img id="spotImage" class="spot-image" alt="景点图片" />
+        <h3 id="spotTitle">未开始</h3>
+        <p id="spotDesc">拖拽并播放路线后，会展示当前到达的景点。</p>
       </article>
-    </section>
-
-    <section class="panel score-panel">
-      <h2>评价结果（四条标准）</h2>
-      <div id="scoreList" class="score-list">
-        <div class="score-item"><span>定准方向</span><strong id="scoreDirection">-</strong></div>
-        <div class="score-item"><span>定好路线</span><strong id="scoreRoute">-</strong></div>
-        <div class="score-item"><span>讲清地点</span><strong id="scoreExplain">-</strong></div>
-        <div class="score-item"><span>符合需求</span><strong id="scoreRequirement">-</strong></div>
-      </div>
-      <p id="scoreSummary" class="summary">完成演示后自动评分。</p>
     </section>
   </main>
 

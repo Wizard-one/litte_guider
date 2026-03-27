@@ -1,22 +1,25 @@
 const DIRECTIONS = {
-  N: { x: 0, y: -1, label: "北" },
-  E: { x: 1, y: 0, label: "东" },
-  S: { x: 0, y: 1, label: "南" },
-  W: { x: -1, y: 0, label: "西" }
+  N: { label: "北" },
+  E: { label: "东" },
+  S: { label: "南" },
+  W: { label: "西" }
 };
 
-const GRID = { cols: 6, rows: 4, cell: 100, offsetX: 50, offsetY: 60 };
+const MAP_COORDS = {
+  DinosaurCorner: { x: 1, y: 1 },
+  ArtSpace: { x: 3, y: 1 },
+  YoungSwallowsSoar: { x: 5, y: 1 },
+  FootballPark: { x: 1, y: 3 },
+  DonutGarden: { x: 3, y: 3 },
+  FriendshipPavilion: { x: 5, y: 3 }
+};
 
-const spots = [
-  { id: "gate", name: "校门", x: 0, y: 3, desc: "校园入口与集合点。", theme: ["#2563eb", "#93c5fd"] },
-  { id: "library", name: "图书馆", x: 2, y: 2, desc: "安静学习区，馆藏丰富。", theme: ["#0ea5e9", "#99f6e4"] },
-  { id: "lab", name: "实验楼", x: 4, y: 2, desc: "理工课程实验与创新实践中心。", theme: ["#4f46e5", "#c4b5fd"] },
-  { id: "canteen", name: "食堂", x: 3, y: 3, desc: "就餐中心，补充体力。", theme: ["#f97316", "#fdba74"] },
-  { id: "stadium", name: "操场", x: 1, y: 1, desc: "运动锻炼与大型活动场地。", theme: ["#16a34a", "#86efac"] },
-  { id: "lake", name: "知行湖", x: 5, y: 1, desc: "校园景观区，适合休憩。", theme: ["#0284c7", "#7dd3fc"] }
-];
-
-const spotById = Object.fromEntries(spots.map((spot) => [spot.id, spot]));
+const MAP_LAYOUT = {
+  offsetX: 70,
+  offsetY: 70,
+  stepX: 95,
+  stepY: 80
+};
 
 const spotPool = document.getElementById("spotPool");
 const directionPool = document.getElementById("directionPool");
@@ -27,266 +30,50 @@ const startBtn = document.getElementById("startBtn");
 const clearRouteBtn = document.getElementById("clearRouteBtn");
 const resetBtn = document.getElementById("resetBtn");
 const message = document.getElementById("message");
-const timeline = document.getElementById("timeline");
-const fpStatus = document.getElementById("fpStatus");
 const stepInfo = document.getElementById("stepInfo");
 const spotImage = document.getElementById("spotImage");
 const spotTitle = document.getElementById("spotTitle");
 const spotDesc = document.getElementById("spotDesc");
-const campusMap = document.getElementById("campusMap");
+const roads = document.getElementById("roads");
 const spotLayer = document.getElementById("spotLayer");
 const userPath = document.getElementById("userPath");
-const playerDot = document.getElementById("playerDot");
-const roads = document.getElementById("roads");
-const grid = document.getElementById("grid");
+const playerAvatar = document.getElementById("playerAvatar");
 
-const scoreDirection = document.getElementById("scoreDirection");
-const scoreRoute = document.getElementById("scoreRoute");
-const scoreExplain = document.getElementById("scoreExplain");
-const scoreRequirement = document.getElementById("scoreRequirement");
-const scoreSummary = document.getElementById("scoreSummary");
-
-let animationTimer = null;
 let routeTokens = [];
+let spots = [];
+let spotById = {};
+let animationFrameId = null;
+let isPlaying = false;
 
-function cellToPoint(x, y) {
+function getPointBySpotId(spotId) {
+  const spot = spotById[spotId];
   return {
-    px: GRID.offsetX + x * GRID.cell,
-    py: GRID.offsetY + y * GRID.cell
+    px: MAP_LAYOUT.offsetX + spot.x * MAP_LAYOUT.stepX,
+    py: MAP_LAYOUT.offsetY + spot.y * MAP_LAYOUT.stepY
   };
 }
 
-function generateSpotImage(spot) {
-  const svg = `
-  <svg xmlns='http://www.w3.org/2000/svg' width='800' height='450'>
-    <defs>
-      <linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'>
-        <stop offset='0%' stop-color='${spot.theme[0]}' />
-        <stop offset='100%' stop-color='${spot.theme[1]}' />
-      </linearGradient>
-    </defs>
-    <rect width='100%' height='100%' fill='url(#g)' />
-    <circle cx='680' cy='80' r='46' fill='rgba(255,255,255,0.28)' />
-    <rect x='40' y='300' width='720' height='110' rx='22' fill='rgba(15,23,42,0.45)' />
-    <text x='70' y='365' font-size='56' fill='white' font-family='Segoe UI, Microsoft YaHei'>${spot.name}</text>
-  </svg>`;
-  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+function setAvatarPosition(point) {
+  playerAvatar.setAttribute("x", String(point.px - 17));
+  playerAvatar.setAttribute("y", String(point.py - 17));
 }
 
-function renderSpotPool() {
-  const html = spots
-    .filter((spot) => spot.id !== "gate")
-    .map(
-      (spot) => `
-      <button class="drag-item spot-item" draggable="true" data-type="spot" data-value="${spot.id}">
-        ${spot.name}
-      </button>
-    `
-    )
-    .join("");
-  spotPool.innerHTML = html;
-}
-
-function renderMapBase() {
-  const gridLines = [];
-  for (let i = 0; i <= GRID.cols; i += 1) {
-    const x = GRID.offsetX + i * GRID.cell;
-    gridLines.push(`<line x1='${x}' y1='${GRID.offsetY}' x2='${x}' y2='${GRID.offsetY + GRID.rows * GRID.cell}' stroke='#dbeafe'/>`);
+function directionBetween(from, to) {
+  if (from.x === to.x) {
+    return from.y > to.y ? "N" : "S";
   }
-  for (let i = 0; i <= GRID.rows; i += 1) {
-    const y = GRID.offsetY + i * GRID.cell;
-    gridLines.push(`<line x1='${GRID.offsetX}' y1='${y}' x2='${GRID.offsetX + GRID.cols * GRID.cell}' y2='${y}' stroke='#dbeafe'/>`);
+  if (from.y === to.y) {
+    return from.x > to.x ? "W" : "E";
   }
-  grid.innerHTML = gridLines.join("");
-
-  const roadsMarkup = [];
-  for (let y = 0; y <= GRID.rows; y += 1) {
-    const yPx = GRID.offsetY + y * GRID.cell;
-    roadsMarkup.push(`<line x1='${GRID.offsetX}' y1='${yPx}' x2='${GRID.offsetX + GRID.cols * GRID.cell}' y2='${yPx}' stroke='#cbd5e1' stroke-width='2'/>`);
-  }
-  for (let x = 0; x <= GRID.cols; x += 1) {
-    const xPx = GRID.offsetX + x * GRID.cell;
-    roadsMarkup.push(`<line x1='${xPx}' y1='${GRID.offsetY}' x2='${xPx}' y2='${GRID.offsetY + GRID.rows * GRID.cell}' stroke='#cbd5e1' stroke-width='2'/>`);
-  }
-  roads.innerHTML = roadsMarkup.join("");
-
-  const spotsMarkup = spots
-    .map((spot) => {
-      const { px, py } = cellToPoint(spot.x, spot.y);
-      return `
-      <g>
-        <circle cx='${px}' cy='${py}' r='16' fill='white' stroke='#2563eb' stroke-width='3'></circle>
-        <text x='${px}' y='${py + 35}' text-anchor='middle' font-size='14' fill='#1e293b'>${spot.name}</text>
-      </g>
-      `;
-    })
-    .join("");
-
-  spotLayer.innerHTML = spotsMarkup;
-}
-
-function expectedNextType() {
-  return routeTokens.length % 2 === 0 ? "spot" : "direction";
+  return null;
 }
 
 function getUsedSpotIds() {
   return new Set(routeTokens.filter((item) => item.type === "spot").map((item) => item.value));
 }
 
-function updateSpotPoolState() {
-  const usedSpotIds = getUsedSpotIds();
-  spotPool.querySelectorAll(".spot-item").forEach((el) => {
-    const isUsed = usedSpotIds.has(el.dataset.value);
-    el.classList.toggle("is-used", isUsed);
-    el.draggable = !isUsed;
-    el.disabled = isUsed;
-  });
-}
-
-function routeTokenLabel(token) {
-  if (token.type === "spot") {
-    return spotById[token.value].name;
-  }
-  return `向${DIRECTIONS[token.value].label}`;
-}
-
-function renderRouteTokens() {
-  routeTimeline.innerHTML = "";
-  routePlaceholder.style.display = routeTokens.length ? "none" : "block";
-  routeTokens.forEach((token, index) => {
-    const item = document.createElement("span");
-    item.className = `route-token ${token.type === "spot" ? "spot-token" : "dir-token"}`;
-    item.textContent = routeTokenLabel(token);
-    routeTimeline.appendChild(item);
-
-    if (index !== routeTokens.length - 1) {
-      const arrow = document.createElement("span");
-      arrow.className = "route-arrow";
-      arrow.textContent = "→";
-      routeTimeline.appendChild(arrow);
-    }
-  });
-  updateSpotPoolState();
-}
-
-function validateDropToken(token) {
-  const nextType = expectedNextType();
-  if (token.type !== nextType) {
-    const tip = nextType === "spot" ? "当前需要拖入地点。" : "当前需要拖入方向。";
-    return { ok: false, reason: `顺序错误：${tip}` };
-  }
-  if (token.type === "spot") {
-    const usedSpotIds = getUsedSpotIds();
-    if (usedSpotIds.has(token.value)) {
-      return { ok: false, reason: "同一地点不能重复加入路线。" };
-    }
-  }
-  return { ok: true };
-}
-
-function addRouteToken(token) {
-  const validation = validateDropToken(token);
-  if (!validation.ok) {
-    setMessage(validation.reason, "warn");
-    return;
-  }
-  routeTokens.push(token);
-  renderRouteTokens();
-  setMessage("路线已更新。", "ok");
-}
-
-function clearRouteOnly() {
-  routeTokens = [];
-  renderRouteTokens();
-  timeline.innerHTML = "";
-  userPath.setAttribute("points", "");
-  setMessage("已清空路线，请重新拖拽。");
-}
-
-function stepPosition(current, command) {
-  const vec = DIRECTIONS[command];
-  if (!vec) {
-    return null;
-  }
-  const next = { x: current.x + vec.x, y: current.y + vec.y };
-  const inRange = next.x >= 0 && next.x <= GRID.cols && next.y >= 0 && next.y <= GRID.rows;
-  if (!inRange) {
-    return null;
-  }
-  return next;
-}
-
-function buildPath(commands) {
-  const start = { x: spotById.gate.x, y: spotById.gate.y, heading: "N" };
-  const states = [start];
-  const errors = [];
-  let current = { ...start };
-
-  commands.forEach((command, index) => {
-    const nextPos = stepPosition(current, command);
-    if (!DIRECTIONS[command]) {
-      errors.push(`第${index + 1}步“${command}”不是有效方向，请使用 N/E/S/W。`);
-      return;
-    }
-    if (!nextPos) {
-      errors.push(`第${index + 1}步“${command}”会走出校园网格边界。`);
-      return;
-    }
-    current = { ...nextPos, heading: command };
-    states.push(current);
-  });
-
-  return { states, errors };
-}
-
-function pointEqual(a, b) {
-  return a.x === b.x && a.y === b.y;
-}
-
-function findVisitedSpots(states) {
-  const visited = [];
-  spots.forEach((spot) => {
-    if (states.some((state) => pointEqual(state, spot)) && spot.id !== "gate") {
-      visited.push(spot.id);
-    }
-  });
-  return visited;
-}
-
-function shortestRoute(from, to) {
-  const route = [];
-  let current = { ...from };
-  while (current.x !== to.x) {
-    if (current.x < to.x) {
-      route.push("E");
-      current.x += 1;
-    } else {
-      route.push("W");
-      current.x -= 1;
-    }
-  }
-  while (current.y !== to.y) {
-    if (current.y < to.y) {
-      route.push("S");
-      current.y += 1;
-    } else {
-      route.push("N");
-      current.y -= 1;
-    }
-  }
-  return route;
-}
-
-function updateSpotCard(state) {
-  const exact = spots.find((spot) => spot.x === state.x && spot.y === state.y) || spotById.gate;
-  spotImage.src = generateSpotImage(exact);
-  spotTitle.textContent = exact.name;
-  spotDesc.textContent = exact.desc;
-}
-
-function headingLabel(heading) {
-  const dir = DIRECTIONS[heading] || DIRECTIONS.N;
-  return dir.label;
+function expectedNextType() {
+  return routeTokens.length % 2 === 0 ? "spot" : "direction";
 }
 
 function setMessage(text, type = "info") {
@@ -303,209 +90,324 @@ function setMessage(text, type = "info") {
   }
 }
 
-function scoreToLevel(score) {
-  if (score >= 85) {
-    return `优秀（${score}）`;
+function routeTokenLabel(token) {
+  if (token.type === "spot") {
+    return spotById[token.value].displayName;
   }
-  if (score >= 70) {
-    return `良好（${score}）`;
-  }
-  if (score >= 60) {
-    return `合格（${score}）`;
-  }
-  return `待改进（${score}）`;
+  return `向${DIRECTIONS[token.value].label}`;
 }
 
-function evaluateResult(selectedIds, commands, states, errors) {
-  const visited = findVisitedSpots(states);
-  const uniqueVisited = new Set(visited);
-  const directionTotal = selectedIds.length > 1 ? selectedIds.length - 1 : 0;
-  const directionHit = Number(scoreDirection.dataset.hit || 0);
-  const directionScore = directionTotal ? Math.round((directionHit / directionTotal) * 100) : 100;
-
-  let routeScore = 100;
-  const missingCount = selectedIds.filter((id) => !uniqueVisited.has(id)).length;
-  routeScore -= missingCount * 25;
-  if (commands.length < selectedIds.length * 2) {
-    routeScore -= 15;
-  }
-  routeScore = Math.max(routeScore, 20);
-
-  let explainScore = 40 + uniqueVisited.size * 20;
-  explainScore = Math.min(explainScore, 100);
-
-  let reqScore = 100;
-  if (selectedIds.length < 2) {
-    reqScore -= 40;
-  }
-  if (!commands.length) {
-    reqScore -= 30;
-  }
-  if (errors.length > 0) {
-    reqScore -= 20;
-  }
-  if (missingCount > 0) {
-    reqScore -= 20;
-  }
-  reqScore = Math.max(reqScore, 10);
-
-  scoreDirection.textContent = scoreToLevel(directionScore);
-  scoreRoute.textContent = scoreToLevel(routeScore);
-  scoreExplain.textContent = scoreToLevel(explainScore);
-  scoreRequirement.textContent = scoreToLevel(reqScore);
-
-  const avg = Math.round((directionScore + routeScore + explainScore + reqScore) / 4);
-  scoreSummary.textContent = `综合评分：${avg} 分。到达景点 ${uniqueVisited.size}/${selectedIds.length}，方向匹配 ${directionHit}/${directionTotal}。`;
+function updateSpotPoolState() {
+  const usedSpotIds = getUsedSpotIds();
+  spotPool.querySelectorAll(".spot-item").forEach((el) => {
+    const isUsed = usedSpotIds.has(el.dataset.value);
+    el.classList.toggle("is-used", isUsed);
+    el.draggable = !isUsed;
+    el.disabled = isUsed;
+  });
 }
 
-function updatePathPolyline(states) {
-  const points = states
-    .map((state) => {
-      const { px, py } = cellToPoint(state.x, state.y);
-      return `${px},${py}`;
-    })
-    .join(" ");
-  userPath.setAttribute("points", points);
+function renderRouteTokens() {
+  routeTimeline.innerHTML = "";
+  routePlaceholder.style.display = routeTokens.length ? "none" : "block";
+
+  routeTokens.forEach((token, index) => {
+    const item = document.createElement("span");
+    item.className = `route-token ${token.type === "spot" ? "spot-token" : "dir-token"}`;
+    item.textContent = routeTokenLabel(token);
+    routeTimeline.appendChild(item);
+
+    if (index !== routeTokens.length - 1) {
+      const arrow = document.createElement("span");
+      arrow.className = "route-arrow";
+      arrow.textContent = "→";
+      routeTimeline.appendChild(arrow);
+    }
+  });
+
+  updateSpotPoolState();
 }
 
-function renderTimeline(commands) {
-  if (!commands.length) {
-    timeline.innerHTML = "<span>暂无路线步骤</span>";
-    return;
-  }
-  timeline.innerHTML = commands
-    .map((cmd, i) => `<span>第${i + 1}步：${cmd}</span>`)
+function renderSpotPool() {
+  spotPool.innerHTML = spots
+    .map(
+      (spot) => `
+      <button class="drag-item spot-item" draggable="true" data-type="spot" data-value="${spot.id}">
+        ${spot.displayName}
+      </button>
+    `
+    )
     .join("");
 }
 
-function clearAnimation() {
-  if (animationTimer) {
-    clearInterval(animationTimer);
-    animationTimer = null;
-  }
+function getUniqueEdges() {
+  const edgeSet = new Set();
+  const edges = [];
+  spots.forEach((spot) => {
+    spot.connectedTo.forEach((nextId) => {
+      const pair = [spot.id, nextId].sort().join("|");
+      if (!edgeSet.has(pair) && spotById[nextId]) {
+        edgeSet.add(pair);
+        edges.push([spot.id, nextId]);
+      }
+    });
+  });
+  return edges;
 }
 
-function animate(states, commands, done) {
-  clearAnimation();
-  let index = 0;
-  updatePathPolyline(states);
-  const first = states[0];
-  const firstPoint = cellToPoint(first.x, first.y);
-  playerDot.setAttribute("cx", firstPoint.px);
-  playerDot.setAttribute("cy", firstPoint.py);
-  fpStatus.textContent = `我在：校门（朝向北）`;
-  stepInfo.textContent = "开始出发...";
-  updateSpotCard(first);
+function renderMap() {
+  const roadMarkup = getUniqueEdges()
+    .map(([fromId, toId]) => {
+      const from = getPointBySpotId(fromId);
+      const to = getPointBySpotId(toId);
+      return `<line x1='${from.px}' y1='${from.py}' x2='${to.px}' y2='${to.py}' stroke='#94a3b8' stroke-width='6' stroke-linecap='round'/>`;
+    })
+    .join("");
 
-  animationTimer = setInterval(() => {
-    if (index >= commands.length) {
-      clearAnimation();
-      stepInfo.textContent = "演示结束。";
-      if (done) {
-        done();
-      }
-      return;
+  roads.innerHTML = roadMarkup;
+
+  const spotMarkup = spots
+    .map((spot) => {
+      const p = getPointBySpotId(spot.id);
+      return `
+      <g>
+        <circle cx='${p.px}' cy='${p.py}' r='16' fill='white' stroke='#2563eb' stroke-width='3'></circle>
+        <text x='${p.px}' y='${p.py + 36}' text-anchor='middle' font-size='14' fill='#1e293b'>${spot.displayName}</text>
+      </g>
+      `;
+    })
+    .join("");
+
+  spotLayer.innerHTML = spotMarkup;
+}
+
+function validateDropToken(token) {
+  if (isPlaying) {
+    return { ok: false, reason: "演示进行中，暂时不能修改路线。" };
+  }
+
+  const nextType = expectedNextType();
+  if (token.type !== nextType) {
+    const tip = nextType === "spot" ? "当前需要拖入地点。" : "当前需要拖入方向。";
+    return { ok: false, reason: `顺序错误：${tip}` };
+  }
+
+  if (token.type === "spot") {
+    const usedSpotIds = getUsedSpotIds();
+    if (usedSpotIds.has(token.value)) {
+      return { ok: false, reason: "同一地点不能重复加入路线。" };
     }
-    index += 1;
-    const state = states[index];
-    const point = cellToPoint(state.x, state.y);
-    playerDot.setAttribute("cx", point.px);
-    playerDot.setAttribute("cy", point.py);
+  }
 
-    const nowSpot = spots.find((spot) => spot.x === state.x && spot.y === state.y);
-    const placeName = nowSpot ? nowSpot.name : `道路节点(${state.x},${state.y})`;
-    fpStatus.textContent = `我在：${placeName}（朝向${headingLabel(state.heading)}）`;
-    stepInfo.textContent = `第 ${index} 步：向${headingLabel(state.heading)}移动，当前位置 ${placeName}`;
-    updateSpotCard(state);
-  }, 900);
+  return { ok: true };
+}
+
+function addRouteToken(token) {
+  const validation = validateDropToken(token);
+  if (!validation.ok) {
+    setMessage(validation.reason, "warn");
+    return;
+  }
+
+  routeTokens.push(token);
+  renderRouteTokens();
+  setMessage("路线已更新。", "ok");
+}
+
+function clearAnimation() {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  isPlaying = false;
+}
+
+function resetAvatar() {
+  playerAvatar.setAttribute("visibility", "hidden");
+  userPath.setAttribute("points", "");
+}
+
+function resetSpotCard() {
+  spotTitle.textContent = "未开始";
+  spotDesc.textContent = "拖拽并播放路线后，会展示当前到达的景点。";
+  spotImage.removeAttribute("src");
+}
+
+function clearRouteOnly() {
+  if (isPlaying) {
+    setMessage("演示进行中，暂时不能清空。", "warn");
+    return;
+  }
+  routeTokens = [];
+  renderRouteTokens();
+  resetAvatar();
+  resetSpotCard();
+  stepInfo.textContent = "等待开始演示...";
+  setMessage("已清空路线，请重新拖拽。", "info");
 }
 
 function resetAll() {
   clearAnimation();
   routeTokens = [];
   renderRouteTokens();
-  setMessage("已重置，请重新拖拽路线。");
-  timeline.innerHTML = "";
-  userPath.setAttribute("points", "");
-  const gatePoint = cellToPoint(spotById.gate.x, spotById.gate.y);
-  playerDot.setAttribute("cx", gatePoint.px);
-  playerDot.setAttribute("cy", gatePoint.py);
-  fpStatus.textContent = "我在：校门（朝向北）";
+  resetAvatar();
+  resetSpotCard();
   stepInfo.textContent = "等待开始演示...";
-  updateSpotCard(spotById.gate);
-
-  [scoreDirection, scoreRoute, scoreExplain, scoreRequirement].forEach((el) => {
-    el.textContent = "-";
-  });
-  scoreDirection.dataset.hit = "0";
-  scoreSummary.textContent = "完成演示后自动评分。";
+  setMessage("已重置全部内容。", "info");
 }
 
-function compileRouteFromTokens() {
-  if (routeTokens.length < 3) {
-    return { error: "请至少拖入 2 个地点与 1 个方向。" };
+function updateSpotCard(spotId) {
+  const spot = spotById[spotId];
+  if (!spot) {
+    return;
+  }
+  const nextNames = spot.connectedTo.map((id) => spotById[id]?.displayName).filter(Boolean);
+  spotTitle.textContent = spot.displayName;
+  spotDesc.textContent = nextNames.length ? `可前往：${nextNames.join("、")}` : "当前地点没有可通行节点。";
+  spotImage.src = `img/${encodeURIComponent(spot.image)}`;
+}
+
+function buildPathFromTokens() {
+  if (routeTokens.length < 5) {
+    return { error: "请至少拖入3个地点和2个方向。" };
   }
   if (routeTokens.length % 2 === 0) {
     return { error: "路线必须以地点结束，保持地点与方向交替。" };
   }
 
   const spotIds = routeTokens.filter((item) => item.type === "spot").map((item) => item.value);
-  const routeDirections = routeTokens.filter((item) => item.type === "direction").map((item) => item.value);
-  if (spotIds.length < 2) {
-    return { error: "请至少拖入 2 个地点。" };
+  const directions = routeTokens.filter((item) => item.type === "direction").map((item) => item.value);
+
+  if (spotIds.length < 3) {
+    return { error: "路径需要经过3个地点才合法。" };
   }
 
-  let cursor = { x: spotById.gate.x, y: spotById.gate.y };
-  const commands = [];
-  let directionMatch = 0;
+  for (let i = 0; i < spotIds.length - 1; i += 1) {
+    const from = spotById[spotIds[i]];
+    const to = spotById[spotIds[i + 1]];
+    const provided = directions[i];
+    const expected = directionBetween(from, to);
 
-  spotIds.forEach((spotId, idx) => {
-    const target = spotById[spotId];
-    const segment = shortestRoute(cursor, target);
-    commands.push(...segment);
+    const connected = from.connectedTo.includes(to.id);
+    const directionCorrect = expected && provided === expected;
 
-    if (idx > 0) {
-      const expected = segment[0] || null;
-      const provided = routeDirections[idx - 1];
-      if (expected && provided === expected) {
-        directionMatch += 1;
-      }
+    if (!connected || !directionCorrect) {
+      return {
+        error: {
+          fromName: from.displayName,
+          directionLabel: DIRECTIONS[provided]?.label || provided
+        }
+      };
     }
-    cursor = { x: target.x, y: target.y };
-  });
+  }
 
-  return { commands, spotIds, directionMatch, directionTotal: routeDirections.length };
+  return { spotIds };
 }
 
-function handleStart() {
-  const compiled = compileRouteFromTokens();
-  if (compiled.error) {
-    setMessage(compiled.error, "warn");
+function updatePathPolyline(spotIds) {
+  const points = spotIds
+    .map((spotId) => {
+      const p = getPointBySpotId(spotId);
+      return `${p.px},${p.py}`;
+    })
+    .join(" ");
+  userPath.setAttribute("points", points);
+}
+
+function animateBetween(fromPoint, toPoint, duration, onDone) {
+  const start = performance.now();
+
+  function frame(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const x = fromPoint.px + (toPoint.px - fromPoint.px) * progress;
+    const y = fromPoint.py + (toPoint.py - fromPoint.py) * progress;
+    setAvatarPosition({ px: x, py: y });
+
+    if (progress < 1) {
+      animationFrameId = requestAnimationFrame(frame);
+      return;
+    }
+
+    onDone();
+  }
+
+  animationFrameId = requestAnimationFrame(frame);
+}
+
+function animatePath(spotIds, done) {
+  if (!spotIds.length) {
+    done();
     return;
   }
 
-  const { commands, spotIds, directionMatch, directionTotal } = compiled;
-  scoreDirection.dataset.hit = String(directionMatch);
+  isPlaying = true;
+  playerAvatar.setAttribute("visibility", "visible");
 
-  const { states, errors } = buildPath(commands);
-  renderTimeline(commands);
-  animate(states, commands, () => {
-    evaluateResult(spotIds, commands, states, errors);
-    if (errors.length > 0) {
-      setMessage(`演示完成，但有 ${errors.length} 处路径问题。`, "warn");
-    } else {
-      if (directionTotal > 0 && directionMatch < directionTotal) {
-        setMessage(`演示完成。方向匹配 ${directionMatch}/${directionTotal}，评分已更新。`, "warn");
-      } else {
-        setMessage("演示完成，评分已生成。", "ok");
-      }
+  let index = 0;
+  const firstPoint = getPointBySpotId(spotIds[0]);
+  setAvatarPosition(firstPoint);
+  updateSpotCard(spotIds[0]);
+  stepInfo.textContent = `起点：${spotById[spotIds[0]].displayName}`;
+
+  function playNextSegment() {
+    if (index >= spotIds.length - 1) {
+      isPlaying = false;
+      done();
+      return;
     }
+
+    const fromId = spotIds[index];
+    const toId = spotIds[index + 1];
+    const fromPoint = getPointBySpotId(fromId);
+    const toPoint = getPointBySpotId(toId);
+
+    stepInfo.textContent = `从 ${spotById[fromId].displayName} 前往 ${spotById[toId].displayName}...`;
+
+    animateBetween(fromPoint, toPoint, 800, () => {
+      index += 1;
+      updateSpotCard(toId);
+      stepInfo.textContent = `已到达：${spotById[toId].displayName}`;
+      playNextSegment();
+    });
+  }
+
+  playNextSegment();
+}
+
+function handleStart() {
+  if (isPlaying) {
+    setMessage("演示进行中，请稍候。", "warn");
+    return;
+  }
+
+  const compiled = buildPathFromTokens();
+  if (compiled.error) {
+    if (typeof compiled.error === "string") {
+      setMessage(compiled.error, "warn");
+      return;
+    }
+
+    const errorText = `x 无法通行: 从${compiled.error.fromName} 向 ${compiled.error.directionLabel} 没有路哦`;
+    setMessage(errorText, "bad");
+    alert(errorText);
+    return;
+  }
+
+  const { spotIds } = compiled;
+  updatePathPolyline(spotIds);
+
+  animatePath(spotIds, () => {
+    const startName = spotById[spotIds[0]].displayName;
+    const endName = spotById[spotIds[spotIds.length - 1]].displayName;
+    const okText = `棒棒哒, 你成功从 ${startName} 走到 ${endName} 啦`;
+    setMessage(okText, "ok");
+    alert(okText);
   });
 }
 
 function handleDragStart(event) {
   const target = event.target.closest(".drag-item");
-  if (!target || target.disabled) {
+  if (!target || target.disabled || isPlaying) {
     return;
   }
 
@@ -520,21 +422,54 @@ function handleDragStart(event) {
 function handleDrop(event) {
   event.preventDefault();
   routeDropZone.classList.remove("drag-over");
+
   const raw = event.dataTransfer.getData("text/plain");
   if (!raw) {
     return;
   }
+
   try {
     const token = JSON.parse(raw);
     addRouteToken(token);
-  } catch (err) {
+  } catch (_err) {
     setMessage("拖拽数据无效，请重试。", "bad");
   }
 }
 
-function init() {
+function normalizeSpots(locData) {
+  const ids = Object.keys(locData);
+  return ids.map((id, index) => {
+    const info = locData[id] || {};
+    const fallback = { x: index % 3, y: Math.floor(index / 3) };
+    const point = MAP_COORDS[id] || fallback;
+
+    return {
+      id,
+      displayName: info.displayName || id,
+      image: info.image || "",
+      connectedTo: Array.isArray(info.connectedTo) ? info.connectedTo : [],
+      x: point.x,
+      y: point.y
+    };
+  });
+}
+
+async function init() {
+  const response = await fetch("loc.json");
+  if (!response.ok) {
+    throw new Error("loc.json 读取失败");
+  }
+
+  const locData = await response.json();
+  spots = normalizeSpots(locData);
+  spotById = Object.fromEntries(spots.map((spot) => [spot.id, spot]));
+
   renderSpotPool();
-  renderMapBase();
+  renderMap();
+  renderRouteTokens();
+  resetAvatar();
+  resetSpotCard();
+
   directionPool.addEventListener("dragstart", handleDragStart);
   spotPool.addEventListener("dragstart", handleDragStart);
 
@@ -542,23 +477,27 @@ function init() {
     event.preventDefault();
     routeDropZone.classList.add("drag-over");
   });
+
   routeDropZone.addEventListener("dragover", (event) => {
     event.preventDefault();
     routeDropZone.classList.add("drag-over");
   });
+
   routeDropZone.addEventListener("dragleave", (event) => {
     if (!routeDropZone.contains(event.relatedTarget)) {
       routeDropZone.classList.remove("drag-over");
     }
   });
+
   routeDropZone.addEventListener("drop", handleDrop);
 
-  updateSpotCard(spotById.gate);
-  resetAll();
+  startBtn.addEventListener("click", handleStart);
+  clearRouteBtn.addEventListener("click", clearRouteOnly);
+  resetBtn.addEventListener("click", resetAll);
+
+  setMessage("请先拖拽至少3个地点与方向，再开始演示。", "info");
 }
 
-startBtn.addEventListener("click", handleStart);
-clearRouteBtn.addEventListener("click", clearRouteOnly);
-resetBtn.addEventListener("click", resetAll);
-
-init();
+init().catch((error) => {
+  setMessage(`初始化失败：${error.message}`, "bad");
+});
