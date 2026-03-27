@@ -426,11 +426,8 @@ function buildEdgeMarkup(fromId, toId) {
 }
 
 function renderMap() {
-  const roadMarkup = getUniqueEdges()
-    .map(([fromId, toId]) => buildEdgeMarkup(fromId, toId))
-    .join("");
-
-  roads.innerHTML = roadMarkup;
+  // Keep the roads layer empty so no lines are shown between spots.
+  roads.innerHTML = "";
 
   const spotMarkup = spots
     .map((spot) => {
