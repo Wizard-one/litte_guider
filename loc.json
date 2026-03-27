@@ -1,8 +1,32 @@
 {
-	"FriendshipPavilion": "友谊之亭.jpg",
-	"DinosaurCorner": "恐龙角.jpg",
-	"DonutGarden": "甜甜圈花园.jpg",
-	"ArtSpace": "艺趣空间.jpg",
-	"FootballPark": "足球乐园.jpg",
-	"YoungSwallowsSoar": "雏燕奋飞.jpg"
+	"FriendshipPavilion": {
+		"displayName": "友谊之亭",
+		"image": "友谊之亭.jpg",
+		"connectedTo": ["YoungSwallowsSoar", "DonutGarden"]
+	},
+	"DinosaurCorner": {
+		"displayName": "恐龙角",
+		"image": "恐龙角.jpg",
+		"connectedTo": ["YoungSwallowsSoar", "ArtSpace", "FootballPark"]
+	},
+	"DonutGarden": {
+		"displayName": "甜甜圈花园",
+		"image": "甜甜圈花园.jpg",
+		"connectedTo": ["FootballPark", "FriendshipPavilion"]
+	},
+	"ArtSpace": {
+		"displayName": "艺趣空间",
+		"image": "艺趣空间.jpg",
+		"connectedTo": ["YoungSwallowsSoar", "DinosaurCorner"]
+	},
+	"FootballPark": {
+		"displayName": "足球乐园",
+		"image": "足球乐园.jpg",
+		"connectedTo": ["DinosaurCorner", "DonutGarden"]
+	},
+	"YoungSwallowsSoar": {
+		"displayName": "雏燕奋飞",
+		"image": "雏燕奋飞.jpg",
+		"connectedTo": ["DinosaurCorner", "ArtSpace", "FriendshipPavilion"]
+	}
 }
