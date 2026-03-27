@@ -44,7 +44,7 @@
 		"image": "艺趣空间.jpg",
 		"connectedTo": ["YoungSwallowsSoar", "DinosaurCorner"],
 		"directionTo": {
-			"YoungSwallowsSoar": "S",
+			"YoungSwallowsSoar": "W",
 			"DinosaurCorner": "S"
 		},
 		"offset": {
