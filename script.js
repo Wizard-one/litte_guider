@@ -503,6 +503,19 @@ function handleDragStart(event) {
   event.dataTransfer.setData("text/plain", JSON.stringify(payload));
 }
 
+function handleSpotPreviewClick(event) {
+  const target = event.target.closest(".spot-item");
+  if (!target) {
+    return;
+  }
+  const spotId = target.dataset.value;
+  if (!spotById[spotId]) {
+    return;
+  }
+  updateSpotCard(spotId);
+  setMessage(`已选中预览：${spotById[spotId].displayName}`, "ok");
+}
+
 function handleDrop(event) {
   event.preventDefault();
   routeDropZone.classList.remove("drag-over");
@@ -556,6 +569,7 @@ async function init() {
 
   directionPool.addEventListener("dragstart", handleDragStart);
   spotPool.addEventListener("dragstart", handleDragStart);
+  spotPool.addEventListener("click", handleSpotPreviewClick);
 
   routeDropZone.addEventListener("dragenter", (event) => {
     event.preventDefault();
