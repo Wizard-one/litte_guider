@@ -265,11 +265,6 @@ button {
   font-size: 14px;
 }
 
-.single-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
 .campus-map {
   width: 100%;
   height: auto;
@@ -277,6 +272,32 @@ button {
   border-radius: 12px;
   border: 1px solid #bfdbfe;
   background: #f8fafc;
+}
+
+.map-stage {
+  position: relative;
+}
+
+.spot-overlay {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: min(42%, 260px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 10px;
+  z-index: 3;
+  backdrop-filter: blur(2px);
+}
+
+.spot-overlay h3 {
+  margin: 6px 0 4px;
+}
+
+.spot-overlay p {
+  margin: 0;
+  color: #334155;
 }
 
 .step-info {
@@ -320,15 +341,6 @@ button {
   background: #f8fafc;
 }
 
-.spot-panel h3 {
-  margin: 8px 0 4px;
-}
-
-.spot-panel p {
-  margin: 0;
-  color: #334155;
-}
-
 .ok {
   color: var(--ok);
 }
@@ -348,5 +360,16 @@ button {
 
   .spot-pool {
     grid-template-columns: repeat(2, minmax(96px, 1fr));
+  }
+
+  .spot-overlay {
+    width: min(56%, 240px);
+    right: 8px;
+    bottom: 8px;
+    padding: 8px;
+  }
+
+  .spot-image {
+    height: 120px;
   }
 }
