@@ -559,9 +559,15 @@ function resetAvatar() {
 }
 
 function resetSpotCard() {
-  spotTitle.textContent = "未开始";
-  spotDesc.textContent = "拖拽并播放路线后，会展示当前到达的景点。";
-  spotImage.removeAttribute("src");
+  if (spotTitle) {
+    spotTitle.textContent = "未开始";
+  }
+  if (spotDesc) {
+    spotDesc.textContent = "拖拽并播放路线后，会展示当前到达的景点。";
+  }
+  if (spotImage) {
+    spotImage.removeAttribute("src");
+  }
 }
 
 function clearRouteOnly() {
@@ -593,9 +599,15 @@ function updateSpotCard(spotId) {
     return;
   }
   const nextNames = spot.connectedTo.map((id) => spotById[id]?.displayName).filter(Boolean);
-  spotTitle.textContent = spot.displayName;
-  spotDesc.textContent = nextNames.length ? `可前往：${nextNames.join("、")}` : "当前地点没有可通行节点。";
-  spotImage.src = `img/${encodeURIComponent(spot.image)}`;
+  if (spotTitle) {
+    spotTitle.textContent = spot.displayName;
+  }
+  if (spotDesc) {
+    spotDesc.textContent = nextNames.length ? `可前往：${nextNames.join("、")}` : "当前地点没有可通行节点。";
+  }
+  if (spotImage) {
+    spotImage.src = `img/${encodeURIComponent(spot.image)}`;
+  }
 }
 
 function getReachableText(spotId) {
