@@ -183,13 +183,33 @@ function getUniqueEdges() {
   return edges;
 }
 
+function buildEdgeMarkup(fromId, toId) {
+  const fromSpot = spotById[fromId];
+  const toSpot = spotById[toId];
+  const from = getPointBySpotId(fromId);
+  const to = getPointBySpotId(toId);
+
+  const dx = Math.abs((toSpot?.x ?? 0) - (fromSpot?.x ?? 0));
+  const dy = Math.abs((toSpot?.y ?? 0) - (fromSpot?.y ?? 0));
+
+  // Long edges are drawn as arcs so direct links are visually independent from short segments.
+  const isLongEdge = dx + dy >= 3;
+  if (!isLongEdge) {
+    return `<line x1='${from.px}' y1='${from.py}' x2='${to.px}' y2='${to.py}' stroke='#94a3b8' stroke-width='6' stroke-linecap='round'/>`;
+  }
+
+  const midX = (from.px + to.px) / 2;
+  const midY = (from.py + to.py) / 2;
+  const offsetX = from.py === to.py ? 0 : 28;
+  const offsetY = from.py === to.py ? -42 : -26;
+  const ctrlX = midX + offsetX;
+  const ctrlY = midY + offsetY;
+  return `<path d='M ${from.px} ${from.py} Q ${ctrlX} ${ctrlY} ${to.px} ${to.py}' stroke='#64748b' stroke-width='5' fill='none' stroke-linecap='round'/>`;
+}
+
 function renderMap() {
   const roadMarkup = getUniqueEdges()
-    .map(([fromId, toId]) => {
-      const from = getPointBySpotId(fromId);
-      const to = getPointBySpotId(toId);
-      return `<line x1='${from.px}' y1='${from.py}' x2='${to.px}' y2='${to.py}' stroke='#94a3b8' stroke-width='6' stroke-linecap='round'/>`;
-    })
+    .map(([fromId, toId]) => buildEdgeMarkup(fromId, toId))
     .join("");
 
   roads.innerHTML = roadMarkup;
