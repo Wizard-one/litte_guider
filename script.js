@@ -48,6 +48,8 @@ let draggingSpotId = null;
 let calibrationOffsets = {};
 let loadedLocations = {};
 
+const ARRIVAL_DWELL_MS = 700;
+
 function getEmbeddedLocConfig() {
   if (typeof window === "undefined") {
     return null;
@@ -687,11 +689,13 @@ function animatePath(spotIds, done) {
       index += 1;
       updateSpotCard(toId);
       stepInfo.textContent = `已到达：${spotById[toId].displayName}`;
-      playNextSegment();
+      // Pause briefly at each arrived spot so the card matches the current map point.
+      setTimeout(playNextSegment, ARRIVAL_DWELL_MS);
     });
   }
 
-  playNextSegment();
+  // Keep a short dwell on the start spot before moving to the next segment.
+  setTimeout(playNextSegment, ARRIVAL_DWELL_MS);
 }
 
 function handleStart() {
