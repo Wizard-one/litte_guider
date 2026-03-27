@@ -86,6 +86,25 @@ function toDirectionArrow(dirCode) {
   return "";
 }
 
+function normalizeDirectionCodes(dirValue) {
+  if (Array.isArray(dirValue)) {
+    return dirValue.filter((code) => Boolean(DIRECTIONS[code]));
+  }
+  if (typeof dirValue === "string") {
+    const parts = dirValue.includes("+") ? dirValue.split("+") : [dirValue];
+    return parts.map((part) => part.trim()).filter((code) => Boolean(DIRECTIONS[code]));
+  }
+  return [];
+}
+
+function formatDirectionTips(dirValue) {
+  const codes = normalizeDirectionCodes(dirValue);
+  if (!codes.length) {
+    return "";
+  }
+  return codes.map((code) => toDirectionArrow(code)).join("+");
+}
+
 function loadCalibrationOffsets() {
   try {
     const raw = localStorage.getItem(CALIBRATION_STORAGE_KEY);
@@ -253,8 +272,9 @@ function validateSegment(fromId, providedDir, toId) {
   }
 
   const expectedDir = from.directionTo?.[to.id];
+  const allowedDirs = normalizeDirectionCodes(expectedDir);
   const isConnected = from.connectedTo.includes(to.id);
-  const isDirectionRight = expectedDir && providedDir === expectedDir;
+  const isDirectionRight = allowedDirs.includes(providedDir);
 
   if (!isConnected || !isDirectionRight) {
     return {
@@ -435,7 +455,7 @@ function renderMap() {
     .map((spot) => {
       const p = getPointBySpotId(spot.id);
       const dirTips = Object.entries(spot.directionTo || {})
-        .map(([toId, dir]) => `${toDirectionArrow(dir)} ${spotById[toId]?.displayName || toId}`)
+        .map(([toId, dir]) => `${formatDirectionTips(dir)} ${spotById[toId]?.displayName || toId}`)
         .join(" | ");
       return `
       <g class='map-spot' data-spot-id='${spot.id}'>
