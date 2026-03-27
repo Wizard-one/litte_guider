@@ -48,6 +48,30 @@ let draggingSpotId = null;
 let calibrationOffsets = {};
 let loadedLocations = {};
 
+function getEmbeddedLocConfig() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const embedded = window.__LOC_DATA__;
+  return embedded && typeof embedded === "object" ? embedded : null;
+}
+
+async function loadLocConfig() {
+  try {
+    const response = await fetch("loc.json");
+    if (!response.ok) {
+      throw new Error("loc.json 读取失败");
+    }
+    return await response.json();
+  } catch (_error) {
+    const embedded = getEmbeddedLocConfig();
+    if (embedded) {
+      return embedded;
+    }
+    throw new Error("loc.json 读取失败，且未找到内置数据");
+  }
+}
+
 function getSpotIdsFromTokens() {
   return routeTokens.filter((item) => item.type === "spot").map((item) => item.value);
 }
@@ -871,12 +895,7 @@ function normalizeSpots(locData) {
 
 async function init() {
   loadCalibrationOffsets();
-  const response = await fetch("loc.json");
-  if (!response.ok) {
-    throw new Error("loc.json 读取失败");
-  }
-
-  const rawConfig = await response.json();
+  const rawConfig = await loadLocConfig();
   const { locations, calibrationOffsets: jsonOffsets } = splitLocConfig(rawConfig);
   loadedLocations = locations || {};
   calibrationOffsets = mergeCalibrationOffsets(jsonOffsets, calibrationOffsets);
