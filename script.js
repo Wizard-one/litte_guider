@@ -161,7 +161,8 @@ function renderSpotPool() {
     .map(
       (spot) => `
       <button class="drag-item spot-item" draggable="true" data-type="spot" data-value="${spot.id}">
-        ${spot.displayName}
+        <img class="spot-thumb" src="img/${encodeURIComponent(spot.image)}" alt="${spot.displayName}" draggable="false" />
+        <span class="spot-name">${spot.displayName}</span>
       </button>
     `
     )

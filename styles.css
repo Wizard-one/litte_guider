@@ -109,7 +109,40 @@ body {
 }
 
 .spot-item {
-  min-height: 48px;
+  min-height: 88px;
+  padding: 6px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 4px;
+  background: #f8fbff;
+}
+
+.spot-thumb {
+  width: 100%;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  pointer-events: none;
+}
+
+.spot-name {
+  font-size: 12px;
+  line-height: 1.2;
+  color: #1e3a8a;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.spot-item.is-used {
+  opacity: 0.45;
+  filter: grayscale(0.2);
 }
 
 .route-drop-zone {
