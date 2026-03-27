@@ -21,8 +21,8 @@ const directionPool = document.getElementById("directionPool");
 const routeDropZone = document.getElementById("routeDropZone");
 const routeTimeline = document.getElementById("routeTimeline");
 const routePlaceholder = document.getElementById("routePlaceholder");
+const trashDropZone = document.getElementById("trashDropZone");
 const startBtn = document.getElementById("startBtn");
-const clearRouteBtn = document.getElementById("clearRouteBtn");
 const resetBtn = document.getElementById("resetBtn");
 const message = document.getElementById("message");
 const stepInfo = document.getElementById("stepInfo");
@@ -253,6 +253,8 @@ function renderRouteTokens() {
     const item = document.createElement("span");
     item.className = `route-token ${token.type === "spot" ? "spot-token" : "dir-token"}`;
     item.textContent = routeTokenLabel(token);
+    item.draggable = true;
+    item.dataset.routeIndex = String(index);
     routeTimeline.appendChild(item);
 
     if (index !== routeTokens.length - 1) {
@@ -264,6 +266,55 @@ function renderRouteTokens() {
   });
 
   updateSpotPoolState();
+}
+
+function normalizeRouteTokens() {
+  const normalized = [];
+  const usedSpotIds = new Set();
+
+  for (let i = 0; i < routeTokens.length; i += 1) {
+    const token = routeTokens[i];
+    const expected = normalized.length % 2 === 0 ? "spot" : "direction";
+    if (token.type !== expected) {
+      break;
+    }
+    if (token.type === "spot") {
+      if (usedSpotIds.has(token.value)) {
+        break;
+      }
+      usedSpotIds.add(token.value);
+    }
+    normalized.push(token);
+  }
+
+  routeTokens = normalized;
+}
+
+function removeRouteTokenByIndex(index) {
+  if (isPlaying || index < 0 || index >= routeTokens.length) {
+    return;
+  }
+
+  // Delete the dropped token and all subsequent tokens to keep the sequence valid.
+  routeTokens = routeTokens.slice(0, index);
+  normalizeRouteTokens();
+  renderRouteTokens();
+
+  const spotIds = getSpotIdsFromTokens();
+  updatePathPolyline(spotIds);
+  if (!spotIds.length) {
+    resetAvatar();
+    resetSpotCard();
+    stepInfo.textContent = "等待开始演示...";
+  } else {
+    const lastSpotId = spotIds[spotIds.length - 1];
+    updateSpotCard(lastSpotId);
+    playerAvatar.setAttribute("visibility", "visible");
+    setAvatarPosition(getPointBySpotId(lastSpotId));
+    stepInfo.textContent = `当前停留：${spotById[lastSpotId].displayName}`;
+  }
+
+  setMessage("已删除路线项。", "ok");
 }
 
 function renderSpotPool() {
@@ -614,8 +665,23 @@ function handleStart() {
 }
 
 function handleDragStart(event) {
+  if (isPlaying) {
+    return;
+  }
+
+  const routeToken = event.target.closest(".route-token");
+  if (routeToken && routeToken.dataset.routeIndex) {
+    const payload = {
+      type: "route-token",
+      value: Number(routeToken.dataset.routeIndex)
+    };
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", JSON.stringify(payload));
+    return;
+  }
+
   const target = event.target.closest(".drag-item");
-  if (!target || target.disabled || isPlaying) {
+  if (!target || target.disabled) {
     return;
   }
 
@@ -654,6 +720,25 @@ function handleDrop(event) {
     addRouteToken(token);
   } catch (_err) {
     setMessage("拖拽数据无效，请重试。", "bad");
+  }
+}
+
+function handleTrashDrop(event) {
+  event.preventDefault();
+  trashDropZone.classList.remove("drag-over");
+
+  const raw = event.dataTransfer.getData("text/plain");
+  if (!raw) {
+    return;
+  }
+
+  try {
+    const payload = JSON.parse(raw);
+    if (payload.type === "route-token") {
+      removeRouteTokenByIndex(Number(payload.value));
+    }
+  } catch (_error) {
+    setMessage("删除失败：无效拖拽数据。", "warn");
   }
 }
 
@@ -804,8 +889,24 @@ async function init() {
 
   routeDropZone.addEventListener("drop", handleDrop);
 
+  routeTimeline.addEventListener("dragstart", handleDragStart);
+
+  trashDropZone.addEventListener("dragenter", (event) => {
+    event.preventDefault();
+    trashDropZone.classList.add("drag-over");
+  });
+  trashDropZone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    trashDropZone.classList.add("drag-over");
+  });
+  trashDropZone.addEventListener("dragleave", (event) => {
+    if (!trashDropZone.contains(event.relatedTarget)) {
+      trashDropZone.classList.remove("drag-over");
+    }
+  });
+  trashDropZone.addEventListener("drop", handleTrashDrop);
+
   startBtn.addEventListener("click", handleStart);
-  clearRouteBtn.addEventListener("click", clearRouteOnly);
   resetBtn.addEventListener("click", resetAll);
   calibrateToggleBtn.addEventListener("click", toggleCalibrationMode);
   resetCalibrateBtn.addEventListener("click", resetCalibration);

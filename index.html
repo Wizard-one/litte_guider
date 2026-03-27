@@ -10,7 +10,7 @@
   <main class="app">
     <header class="topbar">
       <h1>校园小导游 · 路线挑战</h1>
-      <p>请按“地点 → 方向 → 地点”拖拽路线，系统会按地图道路播放avatar移动动画。</p>
+      <p>请按“地点 → 方向 → 地点”拖拽路线，系统会按地图道路播放你的移动路线哦。</p>
     </header>
 
     <section class="main-grid">
@@ -52,11 +52,18 @@
           <p id="routePlaceholder" class="route-placeholder">将景点和方向拖到这里</p>
           <div id="routeTimeline" class="route-timeline"></div>
         </div>
+        <div class="route-tools">
+          <div id="trashDropZone" class="trash-drop-zone" aria-label="垃圾桶删除区">
+            <svg viewBox="0 0 24 24" class="trash-icon" aria-hidden="true">
+              <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm-2 6h2v9H7V9zm4 0h2v9h-2V9zm4 0h2v9h-2V9z" fill="currentColor"></path>
+            </svg>
+            <span>拖到这里删除路线项</span>
+          </div>
+        </div>
 
         <div class="actions">
           <button id="startBtn">开始演示</button>
-          <button id="clearRouteBtn" class="secondary">一键清空路线</button>
-          <button id="resetBtn" class="ghost">重置全部</button>
+          <button id="resetBtn" class="secondary">一键清空并重置</button>
         </div>
         <div id="message" class="message"></div>
       </article>

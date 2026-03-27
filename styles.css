@@ -177,6 +177,7 @@ body {
   font-size: 13px;
   border: 1px solid var(--line);
   background: white;
+  cursor: grab;
 }
 
 .route-token.spot-token {
@@ -192,6 +193,33 @@ body {
 .route-arrow {
   color: #94a3b8;
   align-self: center;
+}
+
+.route-tools {
+  margin-top: 8px;
+}
+
+.trash-drop-zone {
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  user-select: none;
+}
+
+.trash-drop-zone.drag-over {
+  border-color: #ea580c;
+  background: #ffedd5;
+}
+
+.trash-icon {
+  width: 15px;
+  height: 15px;
 }
 
 .actions {
