@@ -261,25 +261,46 @@ function setAvatarPosition(point) {
   playerAvatar.setAttribute("y", String(point.py - 22));
 }
 
+function formatDirectionLabels(dirValue) {
+  const codes = normalizeDirectionCodes(dirValue);
+  return codes.map((code) => DIRECTIONS[code]?.label || code).join("+");
+}
+
+function isSameDirectionSet(expected, provided) {
+  if (expected.length !== provided.length) {
+    return false;
+  }
+  const expectedSet = new Set(expected);
+  const providedSet = new Set(provided);
+  if (expectedSet.size !== providedSet.size) {
+    return false;
+  }
+  return [...expectedSet].every((code) => providedSet.has(code));
+}
+
 function validateSegment(fromId, providedDir, toId) {
   const from = spotById[fromId];
   const to = spotById[toId];
+  const providedDirs = normalizeDirectionCodes(providedDir);
   if (!from || !to) {
+    const providedLabel = formatDirectionLabels(providedDirs) || "未知方向";
     return {
       ok: false,
-      errorText: `x 无法通行: 从${from?.displayName || "未知地点"} 向 ${DIRECTIONS[providedDir]?.label || providedDir} 没有路哦`
+      errorText: `x 无法通行: 从${from?.displayName || "未知地点"} 向 ${providedLabel} 没有路哦`
     };
   }
 
   const expectedDir = from.directionTo?.[to.id];
   const allowedDirs = normalizeDirectionCodes(expectedDir);
   const isConnected = from.connectedTo.includes(to.id);
-  const isDirectionRight = allowedDirs.includes(providedDir);
+  const isDirectionRight = isSameDirectionSet(allowedDirs, providedDirs);
 
   if (!isConnected || !isDirectionRight) {
+    const requiredLabel = formatDirectionLabels(allowedDirs) || "未知方向";
+    const providedLabel = formatDirectionLabels(providedDirs) || "未知方向";
     return {
       ok: false,
-      errorText: `x 无法通行: 从${from.displayName} 向 ${DIRECTIONS[providedDir]?.label || providedDir} 没有路哦`
+      errorText: `x 无法通行: 从${from.displayName} 到 ${to.displayName} 需要方向 ${requiredLabel}，你输入的是 ${providedLabel}`
     };
   }
 
@@ -288,10 +309,6 @@ function validateSegment(fromId, providedDir, toId) {
 
 function getUsedSpotIds() {
   return new Set(routeTokens.filter((item) => item.type === "spot").map((item) => item.value));
-}
-
-function expectedNextType() {
-  return routeTokens.length % 2 === 0 ? "spot" : "direction";
 }
 
 function setMessage(text, type = "info") {
@@ -354,16 +371,25 @@ function normalizeRouteTokens() {
 
   for (let i = 0; i < routeTokens.length; i += 1) {
     const token = routeTokens[i];
-    const expected = normalized.length % 2 === 0 ? "spot" : "direction";
-    if (token.type !== expected) {
-      break;
-    }
     if (token.type === "spot") {
+      if (normalized.length > 0 && normalized[normalized.length - 1].type !== "direction") {
+        break;
+      }
       if (usedSpotIds.has(token.value)) {
         break;
       }
       usedSpotIds.add(token.value);
+      normalized.push(token);
+      continue;
     }
+
+    if (token.type !== "direction") {
+      break;
+    }
+    if (!normalized.length) {
+      break;
+    }
+
     normalized.push(token);
   }
 
@@ -487,20 +513,60 @@ function validateDropToken(token) {
     return { ok: false, reason: "演示进行中，暂时不能修改路线。" };
   }
 
-  const nextType = expectedNextType();
-  if (token.type !== nextType) {
-    const tip = nextType === "spot" ? "当前需要拖入地点。" : "当前需要拖入方向。";
-    return { ok: false, reason: `顺序错误：${tip}` };
-  }
-
   if (token.type === "spot") {
+    if (routeTokens.length > 0 && routeTokens[routeTokens.length - 1].type !== "direction") {
+      return { ok: false, reason: "顺序错误：地点前至少需要一个方向。" };
+    }
     const usedSpotIds = getUsedSpotIds();
     if (usedSpotIds.has(token.value)) {
       return { ok: false, reason: "同一地点不能重复加入路线。" };
     }
+    return { ok: true };
   }
 
-  return { ok: true };
+  if (token.type === "direction") {
+    if (!routeTokens.length) {
+      return { ok: false, reason: "顺序错误：请先拖入起点地点。" };
+    }
+    return { ok: true };
+  }
+
+  return { ok: false, reason: "拖拽类型无效。" };
+}
+
+function getLatestSegmentFromTokens() {
+  if (routeTokens.length < 3) {
+    return null;
+  }
+  const toIndex = routeTokens.length - 1;
+  const toToken = routeTokens[toIndex];
+  if (toToken.type !== "spot") {
+    return null;
+  }
+
+  let fromIndex = toIndex - 1;
+  while (fromIndex >= 0 && routeTokens[fromIndex].type !== "spot") {
+    fromIndex -= 1;
+  }
+  if (fromIndex < 0) {
+    return null;
+  }
+
+  const directionValues = routeTokens
+    .slice(fromIndex + 1, toIndex)
+    .filter((token) => token.type === "direction")
+    .map((token) => token.value);
+
+  if (!directionValues.length) {
+    return null;
+  }
+
+  return {
+    fromToken: routeTokens[fromIndex],
+    toToken,
+    directionValues,
+    fromIndex
+  };
 }
 
 function addRouteToken(token) {
@@ -528,13 +594,16 @@ function addRouteToken(token) {
   }
 
   if (token.type === "spot" && routeTokens.length >= 3) {
-    const fromToken = routeTokens[routeTokens.length - 3];
-    const directionToken = routeTokens[routeTokens.length - 2];
-    const toToken = routeTokens[routeTokens.length - 1];
+    const latestSegment = getLatestSegmentFromTokens();
+    if (!latestSegment) {
+      setMessage("路径结构异常，请重试。", "bad");
+      return;
+    }
 
-    const segmentResult = validateSegment(fromToken.value, directionToken.value, toToken.value);
+    const { fromToken, toToken, directionValues, fromIndex } = latestSegment;
+    const segmentResult = validateSegment(fromToken.value, directionValues, toToken.value);
     if (!segmentResult.ok) {
-      routeTokens.splice(routeTokens.length - 2, 2);
+      routeTokens = routeTokens.slice(0, fromIndex + 1);
       renderRouteTokens();
       updateSpotCard(fromToken.value);
       updatePathPolyline(getSpotIdsFromTokens());
@@ -651,25 +720,45 @@ function buildPathFromTokens() {
   if (routeTokens.length < 5) {
     return { error: "请至少拖入3个地点和2个方向。" };
   }
-  if (routeTokens.length % 2 === 0) {
-    return { error: "路线必须以地点结束，保持地点与方向交替。" };
+  if (routeTokens[0]?.type !== "spot") {
+    return { error: "路线必须以地点开始。" };
+  }
+  if (routeTokens[routeTokens.length - 1]?.type !== "spot") {
+    return { error: "路线必须以地点结束。" };
   }
 
-  const spotIds = getSpotIdsFromTokens();
-  const directions = routeTokens.filter((item) => item.type === "direction").map((item) => item.value);
+  const spotIds = [routeTokens[0].value];
+  let cursor = 1;
 
-  if (spotIds.length < 3) {
-    return { error: "路径需要经过3个地点才合法。" };
-  }
+  while (cursor < routeTokens.length) {
+    const fromId = spotIds[spotIds.length - 1];
+    const segmentDirections = [];
 
-  for (let i = 0; i < spotIds.length - 1; i += 1) {
-    const fromId = spotIds[i];
-    const toId = spotIds[i + 1];
-    const provided = directions[i];
-    const segmentResult = validateSegment(fromId, provided, toId);
+    while (cursor < routeTokens.length && routeTokens[cursor].type === "direction") {
+      segmentDirections.push(routeTokens[cursor].value);
+      cursor += 1;
+    }
+
+    if (!segmentDirections.length) {
+      return { error: "每两个地点之间至少需要一个方向。" };
+    }
+
+    const nextSpot = routeTokens[cursor];
+    if (!nextSpot || nextSpot.type !== "spot") {
+      return { error: "路线必须以地点结束，且地点之间需先输入方向。" };
+    }
+
+    const segmentResult = validateSegment(fromId, segmentDirections, nextSpot.value);
     if (!segmentResult.ok) {
       return { error: segmentResult.errorText };
     }
+
+    spotIds.push(nextSpot.value);
+    cursor += 1;
+  }
+
+  if (spotIds.length < 3) {
+    return { error: "路径需要经过3个地点才合法。" };
   }
 
   return { spotIds };
