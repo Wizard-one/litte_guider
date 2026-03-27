@@ -6,19 +6,12 @@ const DIRECTIONS = {
 };
 
 const MAP_COORDS = {
-  DinosaurCorner: { x: 1, y: 1 },
-  ArtSpace: { x: 3, y: 1 },
-  YoungSwallowsSoar: { x: 5, y: 1 },
-  FootballPark: { x: 1, y: 3 },
-  DonutGarden: { x: 3, y: 3 },
-  FriendshipPavilion: { x: 5, y: 3 }
-};
-
-const MAP_LAYOUT = {
-  offsetX: 70,
-  offsetY: 70,
-  stepX: 95,
-  stepY: 80
+  ArtSpace: { px: 607, py: 108 },
+  YoungSwallowsSoar: { px: 284, py: 278 },
+  DinosaurCorner: { px: 608, py: 278 },
+  FootballPark: { px: 608, py: 468 },
+  DonutGarden: { px: 607, py: 654 },
+  FriendshipPavilion: { px: 438, py: 707 }
 };
 
 const spotPool = document.getElementById("spotPool");
@@ -51,25 +44,12 @@ function getSpotIdsFromTokens() {
 
 function getPointBySpotId(spotId) {
   const spot = spotById[spotId];
-  return {
-    px: MAP_LAYOUT.offsetX + spot.x * MAP_LAYOUT.stepX,
-    py: MAP_LAYOUT.offsetY + spot.y * MAP_LAYOUT.stepY
-  };
+  return { px: spot.px, py: spot.py };
 }
 
 function setAvatarPosition(point) {
-  playerAvatar.setAttribute("x", String(point.px - 17));
-  playerAvatar.setAttribute("y", String(point.py - 17));
-}
-
-function directionBetween(from, to) {
-  if (from.x === to.x) {
-    return from.y > to.y ? "N" : "S";
-  }
-  if (from.y === to.y) {
-    return from.x > to.x ? "W" : "E";
-  }
-  return null;
+  playerAvatar.setAttribute("x", String(point.px - 22));
+  playerAvatar.setAttribute("y", String(point.py - 22));
 }
 
 function validateSegment(fromId, providedDir, toId) {
@@ -82,7 +62,7 @@ function validateSegment(fromId, providedDir, toId) {
     };
   }
 
-  const expectedDir = directionBetween(from, to);
+  const expectedDir = from.directionTo?.[to.id];
   const isConnected = from.connectedTo.includes(to.id);
   const isDirectionRight = expectedDir && providedDir === expectedDir;
 
@@ -185,27 +165,25 @@ function getUniqueEdges() {
 }
 
 function buildEdgeMarkup(fromId, toId) {
-  const fromSpot = spotById[fromId];
-  const toSpot = spotById[toId];
   const from = getPointBySpotId(fromId);
   const to = getPointBySpotId(toId);
 
-  const dx = Math.abs((toSpot?.x ?? 0) - (fromSpot?.x ?? 0));
-  const dy = Math.abs((toSpot?.y ?? 0) - (fromSpot?.y ?? 0));
+  const dx = Math.abs(to.px - from.px);
+  const dy = Math.abs(to.py - from.py);
 
   // Long edges are drawn as arcs so direct links are visually independent from short segments.
-  const isLongEdge = dx + dy >= 3;
+  const isLongEdge = dx + dy >= 420;
   if (!isLongEdge) {
-    return `<line x1='${from.px}' y1='${from.py}' x2='${to.px}' y2='${to.py}' stroke='#94a3b8' stroke-width='6' stroke-linecap='round'/>`;
+    return `<line x1='${from.px}' y1='${from.py}' x2='${to.px}' y2='${to.py}' stroke='#ef4444' stroke-width='10' stroke-linecap='round' opacity='0.9'/>`;
   }
 
   const midX = (from.px + to.px) / 2;
   const midY = (from.py + to.py) / 2;
-  const offsetX = from.py === to.py ? 0 : 28;
-  const offsetY = from.py === to.py ? -42 : -26;
+  const offsetX = from.py === to.py ? 0 : 22;
+  const offsetY = from.py === to.py ? -82 : -30;
   const ctrlX = midX + offsetX;
   const ctrlY = midY + offsetY;
-  return `<path d='M ${from.px} ${from.py} Q ${ctrlX} ${ctrlY} ${to.px} ${to.py}' stroke='#64748b' stroke-width='5' fill='none' stroke-linecap='round'/>`;
+  return `<path d='M ${from.px} ${from.py} Q ${ctrlX} ${ctrlY} ${to.px} ${to.py}' stroke='#ef4444' stroke-width='9' fill='none' stroke-linecap='round' opacity='0.9'/>`;
 }
 
 function renderMap() {
@@ -220,8 +198,7 @@ function renderMap() {
       const p = getPointBySpotId(spot.id);
       return `
       <g>
-        <circle cx='${p.px}' cy='${p.py}' r='16' fill='white' stroke='#2563eb' stroke-width='3'></circle>
-        <text x='${p.px}' y='${p.py + 36}' text-anchor='middle' font-size='14' fill='#1e293b'>${spot.displayName}</text>
+        <image href='img/loc_icon.png' x='${p.px - 27}' y='${p.py - 48}' width='54' height='54'></image>
       </g>
       `;
     })
@@ -537,7 +514,7 @@ function normalizeSpots(locData) {
   const ids = Object.keys(locData);
   return ids.map((id, index) => {
     const info = locData[id] || {};
-    const fallback = { x: index % 3, y: Math.floor(index / 3) };
+    const fallback = { px: 120 + (index % 3) * 260, py: 120 + Math.floor(index / 3) * 300 };
     const point = MAP_COORDS[id] || fallback;
 
     return {
@@ -545,8 +522,9 @@ function normalizeSpots(locData) {
       displayName: info.displayName || id,
       image: info.image || "",
       connectedTo: Array.isArray(info.connectedTo) ? info.connectedTo : [],
-      x: point.x,
-      y: point.y
+      directionTo: info.directionTo || {},
+      px: point.px,
+      py: point.py
     };
   });
 }
