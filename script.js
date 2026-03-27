@@ -36,7 +36,6 @@ const playerAvatar = document.getElementById("playerAvatar");
 const campusMap = document.getElementById("campusMap");
 const calibrateToggleBtn = document.getElementById("calibrateToggleBtn");
 const resetCalibrateBtn = document.getElementById("resetCalibrateBtn");
-const copyCalibrateBtn = document.getElementById("copyCalibrateBtn");
 const calibrateStatus = document.getElementById("calibrateStatus");
 
 let routeTokens = [];
@@ -47,6 +46,7 @@ let isPlaying = false;
 let isCalibrationMode = false;
 let draggingSpotId = null;
 let calibrationOffsets = {};
+let loadedLocations = {};
 
 function getSpotIdsFromTokens() {
   return routeTokens.filter((item) => item.type === "spot").map((item) => item.value);
@@ -162,6 +162,40 @@ function updateCalibrationUI() {
   } else {
     updateCalibrationStatus("微调已关闭。开启后可拖动地图上的地点图标对齐参考图。");
   }
+}
+
+function buildLocJsonWithOffsets() {
+  const next = {};
+  spots.forEach((spot) => {
+    const base = loadedLocations[spot.id] || {};
+    const offset = calibrationOffsets[spot.id] || { dx: 0, dy: 0 };
+    next[spot.id] = {
+      ...base,
+      displayName: spot.displayName,
+      image: spot.image,
+      connectedTo: Array.isArray(spot.connectedTo) ? [...spot.connectedTo] : [],
+      directionTo: spot.directionTo || {},
+      offset: {
+        dx: Number(offset.dx || 0),
+        dy: Number(offset.dy || 0)
+      }
+    };
+  });
+  return next;
+}
+
+function downloadUpdatedLocJson() {
+  const merged = buildLocJsonWithOffsets();
+  const text = `${JSON.stringify(merged, null, 2)}\n`;
+  const blob = new Blob([text], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "loc.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function getSvgPointerPoint(event) {
@@ -777,11 +811,17 @@ function handleMapPointerUp(event) {
   campusMap.releasePointerCapture(event.pointerId);
   draggingSpotId = null;
   captureCalibrationOffsets();
-  updateCalibrationStatus("点位已保存到本地。可继续拖动微调，或复制点位JSON固化到代码。");
+  updateCalibrationStatus("点位已保存到本地。关闭微调时会自动导出更新后的 loc.json。\n");
 }
 
 function toggleCalibrationMode() {
+  const wasCalibrationMode = isCalibrationMode;
   isCalibrationMode = !isCalibrationMode;
+  if (wasCalibrationMode && !isCalibrationMode) {
+    captureCalibrationOffsets();
+    downloadUpdatedLocJson();
+    setMessage("已关闭微调，并自动下载更新后的 loc.json。", "ok");
+  }
   updateCalibrationUI();
 }
 
@@ -803,19 +843,6 @@ function resetCalibration() {
   syncTransientVisuals();
   setMessage("点位微调已重置。", "ok");
   updateCalibrationStatus("点位已恢复为默认坐标。若需要可重新开启微调。");
-}
-
-async function copyCalibrationJson() {
-  captureCalibrationOffsets();
-  const payload = JSON.stringify(calibrationOffsets, null, 2);
-  try {
-    await navigator.clipboard.writeText(payload);
-    setMessage("点位JSON已复制到剪贴板。", "ok");
-    updateCalibrationStatus("点位JSON已复制。你可以粘贴保存为固定坐标。\n");
-  } catch (_error) {
-    setMessage("复制失败：浏览器权限限制，请手动复制控制台输出。", "warn");
-    console.log("calibrationOffsets", payload);
-  }
 }
 
 function normalizeSpots(locData) {
@@ -851,6 +878,7 @@ async function init() {
 
   const rawConfig = await response.json();
   const { locations, calibrationOffsets: jsonOffsets } = splitLocConfig(rawConfig);
+  loadedLocations = locations || {};
   calibrationOffsets = mergeCalibrationOffsets(jsonOffsets, calibrationOffsets);
   saveCalibrationOffsets();
 
@@ -910,7 +938,6 @@ async function init() {
   resetBtn.addEventListener("click", resetAll);
   calibrateToggleBtn.addEventListener("click", toggleCalibrationMode);
   resetCalibrateBtn.addEventListener("click", resetCalibration);
-  copyCalibrateBtn.addEventListener("click", copyCalibrationJson);
 
   updateCalibrationUI();
 
