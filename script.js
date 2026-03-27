@@ -5,7 +5,7 @@ const DIRECTIONS = {
   W: { label: "西" }
 };
 
-const MAP_COORDS = {
+const BASE_MAP_COORDS = {
   ArtSpace: { px: 607, py: 108 },
   YoungSwallowsSoar: { px: 284, py: 278 },
   DinosaurCorner: { px: 608, py: 278 },
@@ -13,6 +13,8 @@ const MAP_COORDS = {
   DonutGarden: { px: 607, py: 654 },
   FriendshipPavilion: { px: 438, py: 707 }
 };
+
+const CALIBRATION_STORAGE_KEY = "littleGuider.mapCalibration.v1";
 
 const spotPool = document.getElementById("spotPool");
 const directionPool = document.getElementById("directionPool");
@@ -31,15 +33,88 @@ const roads = document.getElementById("roads");
 const spotLayer = document.getElementById("spotLayer");
 const userPath = document.getElementById("userPath");
 const playerAvatar = document.getElementById("playerAvatar");
+const campusMap = document.getElementById("campusMap");
+const calibrateToggleBtn = document.getElementById("calibrateToggleBtn");
+const resetCalibrateBtn = document.getElementById("resetCalibrateBtn");
+const copyCalibrateBtn = document.getElementById("copyCalibrateBtn");
+const calibrateStatus = document.getElementById("calibrateStatus");
 
 let routeTokens = [];
 let spots = [];
 let spotById = {};
 let animationFrameId = null;
 let isPlaying = false;
+let isCalibrationMode = false;
+let draggingSpotId = null;
+let calibrationOffsets = {};
 
 function getSpotIdsFromTokens() {
   return routeTokens.filter((item) => item.type === "spot").map((item) => item.value);
+}
+
+function toDirectionArrow(dirCode) {
+  if (dirCode === "N") return "↑";
+  if (dirCode === "E") return "→";
+  if (dirCode === "S") return "↓";
+  if (dirCode === "W") return "←";
+  return "";
+}
+
+function loadCalibrationOffsets() {
+  try {
+    const raw = localStorage.getItem(CALIBRATION_STORAGE_KEY);
+    if (!raw) {
+      calibrationOffsets = {};
+      return;
+    }
+    const parsed = JSON.parse(raw);
+    calibrationOffsets = parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_error) {
+    calibrationOffsets = {};
+  }
+}
+
+function saveCalibrationOffsets() {
+  localStorage.setItem(CALIBRATION_STORAGE_KEY, JSON.stringify(calibrationOffsets));
+}
+
+function captureCalibrationOffsets() {
+  const next = {};
+  spots.forEach((spot) => {
+    const base = BASE_MAP_COORDS[spot.id];
+    if (!base) {
+      return;
+    }
+    const dx = Math.round(spot.px - base.px);
+    const dy = Math.round(spot.py - base.py);
+    if (dx !== 0 || dy !== 0) {
+      next[spot.id] = { dx, dy };
+    }
+  });
+  calibrationOffsets = next;
+  saveCalibrationOffsets();
+}
+
+function updateCalibrationStatus(text) {
+  calibrateStatus.textContent = text;
+}
+
+function updateCalibrationUI() {
+  calibrateToggleBtn.textContent = isCalibrationMode ? "关闭点位微调" : "开启点位微调";
+  campusMap.classList.toggle("is-calibrating", isCalibrationMode);
+  if (isCalibrationMode) {
+    updateCalibrationStatus("微调进行中：可拖动地图上的地点图标进行对齐。拖完会自动保存。\n");
+  } else {
+    updateCalibrationStatus("微调已关闭。开启后可拖动地图上的地点图标对齐参考图。");
+  }
+}
+
+function getSvgPointerPoint(event) {
+  const pt = campusMap.createSVGPoint();
+  pt.x = event.clientX;
+  pt.y = event.clientY;
+  const transformed = pt.matrixTransform(campusMap.getScreenCTM().inverse());
+  return { px: transformed.x, py: transformed.y };
 }
 
 function getPointBySpotId(spotId) {
@@ -196,15 +271,32 @@ function renderMap() {
   const spotMarkup = spots
     .map((spot) => {
       const p = getPointBySpotId(spot.id);
+      const dirTips = Object.entries(spot.directionTo || {})
+        .map(([toId, dir]) => `${toDirectionArrow(dir)} ${spotById[toId]?.displayName || toId}`)
+        .join(" | ");
       return `
-      <g>
+      <g class='map-spot' data-spot-id='${spot.id}'>
         <image href='img/loc_icon.png' x='${p.px - 27}' y='${p.py - 48}' width='54' height='54'></image>
+        <text x='${p.px}' y='${p.py + 28}' text-anchor='middle' font-size='20' fill='#111827' stroke='white' stroke-width='6' paint-order='stroke'>${spot.displayName}</text>
+        <text x='${p.px}' y='${p.py + 28}' text-anchor='middle' font-size='20' fill='#111827'>${spot.displayName}</text>
+        <title>${spot.displayName}${dirTips ? `\n可达：${dirTips}` : ""}</title>
       </g>
       `;
     })
     .join("");
 
   spotLayer.innerHTML = spotMarkup;
+}
+
+function syncTransientVisuals() {
+  const ids = getSpotIdsFromTokens();
+  if (ids.length > 0) {
+    updatePathPolyline(ids);
+  }
+  if (playerAvatar.getAttribute("visibility") === "visible" && ids.length > 0) {
+    const last = ids[ids.length - 1];
+    setAvatarPosition(getPointBySpotId(last));
+  }
 }
 
 function validateDropToken(token) {
@@ -510,12 +602,93 @@ function handleDrop(event) {
   }
 }
 
+function handleMapPointerDown(event) {
+  if (!isCalibrationMode || isPlaying) {
+    return;
+  }
+  const marker = event.target.closest(".map-spot");
+  if (!marker) {
+    return;
+  }
+  draggingSpotId = marker.dataset.spotId;
+  campusMap.setPointerCapture(event.pointerId);
+  event.preventDefault();
+}
+
+function handleMapPointerMove(event) {
+  if (!isCalibrationMode || !draggingSpotId) {
+    return;
+  }
+  const spot = spotById[draggingSpotId];
+  if (!spot) {
+    return;
+  }
+  const p = getSvgPointerPoint(event);
+  spot.px = Math.round(p.px);
+  spot.py = Math.round(p.py);
+  renderMap();
+  syncTransientVisuals();
+}
+
+function handleMapPointerUp(event) {
+  if (!draggingSpotId) {
+    return;
+  }
+  campusMap.releasePointerCapture(event.pointerId);
+  draggingSpotId = null;
+  captureCalibrationOffsets();
+  updateCalibrationStatus("点位已保存到本地。可继续拖动微调，或复制点位JSON固化到代码。");
+}
+
+function toggleCalibrationMode() {
+  isCalibrationMode = !isCalibrationMode;
+  updateCalibrationUI();
+}
+
+function resetCalibration() {
+  if (isPlaying) {
+    setMessage("演示进行中，暂时不能重置点位。", "warn");
+    return;
+  }
+  calibrationOffsets = {};
+  saveCalibrationOffsets();
+  spots.forEach((spot) => {
+    const base = BASE_MAP_COORDS[spot.id];
+    if (base) {
+      spot.px = base.px;
+      spot.py = base.py;
+    }
+  });
+  renderMap();
+  syncTransientVisuals();
+  setMessage("点位微调已重置。", "ok");
+  updateCalibrationStatus("点位已恢复为默认坐标。若需要可重新开启微调。");
+}
+
+async function copyCalibrationJson() {
+  captureCalibrationOffsets();
+  const payload = JSON.stringify(calibrationOffsets, null, 2);
+  try {
+    await navigator.clipboard.writeText(payload);
+    setMessage("点位JSON已复制到剪贴板。", "ok");
+    updateCalibrationStatus("点位JSON已复制。你可以粘贴保存为固定坐标。\n");
+  } catch (_error) {
+    setMessage("复制失败：浏览器权限限制，请手动复制控制台输出。", "warn");
+    console.log("calibrationOffsets", payload);
+  }
+}
+
 function normalizeSpots(locData) {
   const ids = Object.keys(locData);
   return ids.map((id, index) => {
     const info = locData[id] || {};
     const fallback = { px: 120 + (index % 3) * 260, py: 120 + Math.floor(index / 3) * 300 };
-    const point = MAP_COORDS[id] || fallback;
+    const basePoint = BASE_MAP_COORDS[id] || fallback;
+    const offset = calibrationOffsets[id] || { dx: 0, dy: 0 };
+    const point = {
+      px: basePoint.px + Number(offset.dx || 0),
+      py: basePoint.py + Number(offset.dy || 0)
+    };
 
     return {
       id,
@@ -530,6 +703,7 @@ function normalizeSpots(locData) {
 }
 
 async function init() {
+  loadCalibrationOffsets();
   const response = await fetch("loc.json");
   if (!response.ok) {
     throw new Error("loc.json 读取失败");
@@ -548,6 +722,10 @@ async function init() {
   directionPool.addEventListener("dragstart", handleDragStart);
   spotPool.addEventListener("dragstart", handleDragStart);
   spotPool.addEventListener("click", handleSpotPreviewClick);
+  campusMap.addEventListener("pointerdown", handleMapPointerDown);
+  campusMap.addEventListener("pointermove", handleMapPointerMove);
+  campusMap.addEventListener("pointerup", handleMapPointerUp);
+  campusMap.addEventListener("pointercancel", handleMapPointerUp);
 
   routeDropZone.addEventListener("dragenter", (event) => {
     event.preventDefault();
@@ -570,6 +748,11 @@ async function init() {
   startBtn.addEventListener("click", handleStart);
   clearRouteBtn.addEventListener("click", clearRouteOnly);
   resetBtn.addEventListener("click", resetAll);
+  calibrateToggleBtn.addEventListener("click", toggleCalibrationMode);
+  resetCalibrateBtn.addEventListener("click", resetCalibration);
+  copyCalibrateBtn.addEventListener("click", copyCalibrationJson);
+
+  updateCalibrationUI();
 
   setMessage("请先拖拽至少3个地点与方向，再开始演示。", "info");
 }

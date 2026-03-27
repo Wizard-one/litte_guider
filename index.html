@@ -24,6 +24,12 @@
           <image id="playerAvatar" href="img/avatar.png" width="44" height="44" visibility="hidden"></image>
         </svg>
         <div id="stepInfo" class="step-info">等待开始演示...</div>
+        <div class="calibration-tools">
+          <button id="calibrateToggleBtn" class="ghost" type="button">开启点位微调</button>
+          <button id="resetCalibrateBtn" class="ghost" type="button">重置微调</button>
+          <button id="copyCalibrateBtn" class="ghost" type="button">复制点位JSON</button>
+        </div>
+        <p id="calibrateStatus" class="calibrate-status">微调已关闭。开启后可拖动地图上的地点图标对齐参考图。</p>
       </article>
 
       <article class="panel operation-panel">
