@@ -1,82 +1,108 @@
 {
 	"FriendshipPavilion": {
-		"displayName": "友谊之亭",
-		"image": "友谊之亭.jpg",
-		"connectedTo": ["YoungSwallowsSoar", "DonutGarden"],
-		"directionTo": {
-			"YoungSwallowsSoar": "N",
-			"DonutGarden": "E"
-		},
-		"offset": {
-			"dx": -21,
-			"dy": -113
-		}
+	"displayName": "友谊之亭",
+	"image": "友谊之亭.jpg",
+	"connectedTo": [
+		"YoungSwallowsSoar",
+		"DonutGarden"
+	],
+	"directionTo": {
+		"YoungSwallowsSoar": "N",
+		"DonutGarden": "E"
+	},
+	"offset": {
+		"dx": 62,
+		"dy": -230
+	}
 	},
 	"DinosaurCorner": {
-		"displayName": "恐龙角",
-		"image": "恐龙角.jpg",
-		"connectedTo": ["YoungSwallowsSoar", "ArtSpace", "FootballPark"],
-		"directionTo": {
-			"YoungSwallowsSoar": "W",
-			"ArtSpace": "N",
-			"FootballPark": "S"
-		},
-		"offset": {
-			"dx": 7,
-			"dy": -45
-		}
+	"displayName": "恐龙角",
+	"image": "恐龙角.jpg",
+	"connectedTo": [
+		"YoungSwallowsSoar",
+		"ArtSpace",
+		"FootballPark"
+	],
+	"directionTo": {
+		"YoungSwallowsSoar": "W",
+		"ArtSpace": "N",
+		"FootballPark": "S"
+	},
+	"offset": {
+		"dx": 16,
+		"dy": -23
+	}
 	},
 	"DonutGarden": {
-		"displayName": "校训石",
-		"image": "校训石.jpg",
-		"connectedTo": ["FootballPark", "FriendshipPavilion"],
-		"directionTo": {
-			"FootballPark": "N",
-			"FriendshipPavilion": "W"
-		},
-		"offset": {
-			"dx": -4,
-			"dy": -122
-		}
+	"displayName": "校训石",
+	"image": "校训石.jpg",
+	"connectedTo": [
+		"FootballPark",
+		"FriendshipPavilion"
+	],
+	"directionTo": {
+		"FootballPark": "N",
+		"FriendshipPavilion": "W"
+	},
+	"offset": {
+		"dx": 19,
+		"dy": -191
+	}
 	},
 	"ArtSpace": {
-		"displayName": "艺趣空间",
-		"image": "艺趣空间.jpg",
-		"connectedTo": ["YoungSwallowsSoar", "DinosaurCorner"],
-		"directionTo": {
-			"YoungSwallowsSoar": ["S", "W"],
-			"DinosaurCorner": "S"
-		},
-		"offset": {
-			"dx": 8,
-			"dy": -62
-		}
+	"displayName": "艺趣空间",
+	"image": "艺趣空间.jpg",
+	"connectedTo": [
+		"YoungSwallowsSoar",
+		"DinosaurCorner"
+	],
+	"directionTo": {
+		"YoungSwallowsSoar": [
+		"S",
+		"W"
+		],
+		"DinosaurCorner": "S"
+	},
+	"offset": {
+		"dx": 23,
+		"dy": -3
+	}
 	},
 	"FootballPark": {
-		"displayName": "足球乐园",
-		"image": "足球乐园.jpg",
-		"connectedTo": ["DinosaurCorner", "DonutGarden"],
-		"directionTo": {
-			"DinosaurCorner": "N",
-			"DonutGarden": "S"
-		},
-		"offset": {
-			"dx": 7,
-			"dy": -86
-		}
+	"displayName": "足球乐园",
+	"image": "足球乐园.jpg",
+	"connectedTo": [
+		"DinosaurCorner",
+		"DonutGarden"
+	],
+	"directionTo": {
+		"DinosaurCorner": "N",
+		"DonutGarden": "S"
+	},
+	"offset": {
+		"dx": 8,
+		"dy": -104
+	}
 	},
 	"YoungSwallowsSoar": {
-		"displayName": "雏燕奋飞",
-		"image": "雏燕奋飞.jpg",
-		"connectedTo": ["DinosaurCorner", "ArtSpace", "FriendshipPavilion"],
-		"directionTo": {
-			"DinosaurCorner": "E",
-			"ArtSpace": ["E", "N"],
-			"FriendshipPavilion": "S"
-		},
-		"offset": {
-			"dx": -15,
-			"dy": -39
-		}
+	"displayName": "雏燕奋飞",
+	"image": "雏燕奋飞.jpg",
+	"connectedTo": [
+		"DinosaurCorner",
+		"ArtSpace",
+		"FriendshipPavilion"
+	],
+	"directionTo": {
+		"DinosaurCorner": "E",
+		"ArtSpace": [
+		"E",
+		"N"
+		],
+		"FriendshipPavilion": "S"
+	},
+	"offset": {
+		"dx": 165,
+		"dy": 22
+	}
 	}
 }
