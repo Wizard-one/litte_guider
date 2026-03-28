@@ -7,10 +7,38 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="app">
+  <main id="welcomeScreen" class="welcome-screen scale-target is-active" aria-label="欢迎界面">
+    <section class="welcome-hero">
+      <h1>🏫 校园小导游</h1>
+      <p>今天你想帮助哪位老师规划游览路线呢?</p>
+    </section>
+
+    <section class="entry-grid" aria-label="路线模式选择">
+      <button class="entry-card" type="button" data-entry-mode="art">
+        <span class="entry-icon" aria-hidden="true">🎨</span>
+        <h2>美术老师</h2>
+        <p>想带学生参观校园里的艺术景观和写生地点。</p>
+      </button>
+
+      <button class="entry-card" type="button" data-entry-mode="sport">
+        <span class="entry-icon" aria-hidden="true">⚽</span>
+        <h2>体育老师</h2>
+        <p>想带学生熟悉校园的运动场馆和活动区域。</p>
+      </button>
+
+      <button class="entry-card" type="button" data-entry-mode="custom">
+        <span class="entry-icon" aria-hidden="true">🗺️</span>
+        <h2>自主设计</h2>
+        <p>发挥你的创意，自由选择景点规划一条独特的路线。</p>
+      </button>
+    </section>
+  </main>
+
+  <main id="appScreen" class="app scale-target" aria-label="操作界面">
     <header class="topbar">
       <h1>校园小导游 · 路线挑战</h1>
       <p>请按“地点 → 方向 → 地点”拖拽路线，系统会按地图道路播放你的移动路线哦。</p>
+      <button id="backToWelcomeBtn" class="back-home-btn" type="button">返回首页</button>
     </header>
 
     <section class="main-grid">

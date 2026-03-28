@@ -38,6 +38,10 @@ const calibrateToggleBtn = document.getElementById("calibrateToggleBtn");
 const resetCalibrateBtn = document.getElementById("resetCalibrateBtn");
 const calibrateStatus = document.getElementById("calibrateStatus");
 const appRoot = document.querySelector(".app");
+const welcomeScreen = document.getElementById("welcomeScreen");
+const appScreen = document.getElementById("appScreen");
+const backToWelcomeBtn = document.getElementById("backToWelcomeBtn");
+const entryCards = document.querySelectorAll(".entry-card");
 
 let routeTokens = [];
 let spots = [];
@@ -60,24 +64,28 @@ function shouldUseFixedScaleLayout() {
 }
 
 function applyFixedScaleLayout() {
-  if (!appRoot) {
+  const activeScreen = document.querySelector(".scale-target.is-active");
+  if (!activeScreen) {
     return;
   }
 
   const useFixedScale = shouldUseFixedScaleLayout();
   document.body.classList.toggle("fixed-scale-layout", useFixedScale);
 
+  document.querySelectorAll(".scale-target").forEach((screen) => {
+    screen.style.left = "";
+    screen.style.top = "";
+    screen.style.transform = "";
+  });
+
   if (!useFixedScale) {
-    appRoot.style.left = "";
-    appRoot.style.top = "";
-    appRoot.style.transform = "";
     return;
   }
 
-  appRoot.style.transform = "scale(1)";
+  activeScreen.style.transform = "scale(1)";
 
-  const baseWidth = appRoot.offsetWidth;
-  const baseHeight = appRoot.offsetHeight;
+  const baseWidth = activeScreen.offsetWidth;
+  const baseHeight = activeScreen.offsetHeight;
   if (!baseWidth || !baseHeight) {
     return;
   }
@@ -89,9 +97,33 @@ function applyFixedScaleLayout() {
   const left = Math.max(0, (viewportWidth - baseWidth * scale) / 2);
   const top = Math.max(0, (viewportHeight - baseHeight * scale) / 2);
 
-  appRoot.style.left = `${left}px`;
-  appRoot.style.top = `${top}px`;
-  appRoot.style.transform = `scale(${scale})`;
+  activeScreen.style.left = `${left}px`;
+  activeScreen.style.top = `${top}px`;
+  activeScreen.style.transform = `scale(${scale})`;
+}
+
+function setActiveScreen(target) {
+  if (!welcomeScreen || !appScreen) {
+    return;
+  }
+
+  const showWelcome = target === "welcome";
+  welcomeScreen.classList.toggle("is-active", showWelcome);
+  appScreen.classList.toggle("is-active", !showWelcome);
+  applyFixedScaleLayout();
+}
+
+function handleEntryCardClick(event) {
+  const card = event.currentTarget;
+  const mode = card.dataset.entryMode;
+  if (mode === "art") {
+    setMessage("已选择：美术老师路线模式。", "ok");
+  } else if (mode === "sport") {
+    setMessage("已选择：体育老师路线模式。", "ok");
+  } else {
+    setMessage("已选择：自主设计模式。", "ok");
+  }
+  setActiveScreen("app");
 }
 
 function getEmbeddedLocConfig() {
@@ -1317,6 +1349,12 @@ async function init() {
   resetBtn.addEventListener("click", resetAll);
   calibrateToggleBtn.addEventListener("click", toggleCalibrationMode);
   resetCalibrateBtn.addEventListener("click", resetCalibration);
+  if (backToWelcomeBtn) {
+    backToWelcomeBtn.addEventListener("click", () => setActiveScreen("welcome"));
+  }
+  entryCards.forEach((card) => {
+    card.addEventListener("click", handleEntryCardClick);
+  });
 
   window.addEventListener("resize", applyFixedScaleLayout);
   window.addEventListener("orientationchange", applyFixedScaleLayout);
@@ -1325,7 +1363,7 @@ async function init() {
   }
 
   updateCalibrationUI();
-  applyFixedScaleLayout();
+  setActiveScreen("welcome");
 
   setMessage("请先拖拽至少3个地点与方向，再开始演示。", "info");
 }

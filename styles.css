@@ -28,6 +28,81 @@ body.fixed-scale-layout {
   height: 100dvh;
 }
 
+.scale-target {
+  display: none;
+}
+
+.scale-target.is-active {
+  display: grid;
+}
+
+.welcome-screen {
+  min-height: 100dvh;
+  padding: 42px 52px;
+  gap: 28px;
+  align-content: start;
+}
+
+.welcome-hero {
+  text-align: center;
+  color: #1e3a8a;
+}
+
+.welcome-hero h1 {
+  margin: 0;
+  font-size: 52px;
+  letter-spacing: 1px;
+}
+
+.welcome-hero p {
+  margin: 16px 0 0;
+  font-size: 30px;
+  color: #334155;
+}
+
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 22px;
+}
+
+.entry-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 22px;
+  background: #f8fafc;
+  padding: 30px 22px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+  color: #1e293b;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.entry-card:hover {
+  transform: translateY(-4px);
+  border-color: #93c5fd;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.17);
+}
+
+.entry-icon {
+  font-size: 52px;
+  line-height: 1;
+}
+
+.entry-card h2 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.entry-card p {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.45;
+  color: #475569;
+}
+
 .app {
   max-width: 1200px;
   margin: 0 auto;
@@ -37,6 +112,10 @@ body.fixed-scale-layout {
 }
 
 body.fixed-scale-layout .app {
+  margin: 0;
+}
+
+body.fixed-scale-layout .scale-target.is-active {
   position: fixed;
   width: 1200px;
   max-width: none;
@@ -59,6 +138,13 @@ body.fixed-scale-layout .app {
 .topbar p {
   margin: 0;
   opacity: 0.95;
+}
+
+.back-home-btn {
+  margin-top: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
 }
 
 .panel {
@@ -373,6 +459,31 @@ button {
 }
 
 @media (max-width: 1024px) {
+  .welcome-screen {
+    padding: 24px;
+    gap: 18px;
+  }
+
+  .welcome-hero h1 {
+    font-size: 40px;
+  }
+
+  .welcome-hero p {
+    font-size: 22px;
+  }
+
+  .entry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .entry-card h2 {
+    font-size: 24px;
+  }
+
+  .entry-card p {
+    font-size: 16px;
+  }
+
   .main-grid {
     grid-template-columns: 1fr;
   }
