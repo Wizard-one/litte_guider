@@ -899,7 +899,7 @@ function handleStart() {
   animatePath(spotIds, () => {
     const startName = spotById[spotIds[0]].displayName;
     const endName = spotById[spotIds[spotIds.length - 1]].displayName;
-    const okText = `棒棒哒, 你成功从 ${startName} 走到 ${endName} 啦`;
+    const okText = `⭐⭐⭐⭐棒棒哒, 你成功从 ${startName} 走到 ${endName} 啦`;
     setMessage(okText, "ok");
     alert(okText);
   });
