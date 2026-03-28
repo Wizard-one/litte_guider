@@ -29,11 +29,11 @@ body.fixed-scale-layout {
 }
 
 .scale-target {
-  display: none;
+  display: none !important;
 }
 
 .scale-target.is-active {
-  display: grid;
+  display: grid !important;
 }
 
 .welcome-screen {

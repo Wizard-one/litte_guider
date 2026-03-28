@@ -135,6 +135,8 @@ function setActiveScreen(target) {
   const showWelcome = target === "welcome";
   welcomeScreen.classList.toggle("is-active", showWelcome);
   appScreen.classList.toggle("is-active", !showWelcome);
+  welcomeScreen.setAttribute("aria-hidden", showWelcome ? "false" : "true");
+  appScreen.setAttribute("aria-hidden", showWelcome ? "true" : "false");
   if (showWelcome) {
     setSpotOverlayVisible(false);
   }
