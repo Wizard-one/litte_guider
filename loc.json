@@ -27,8 +27,8 @@
 		}
 	},
 	"DonutGarden": {
-		"displayName": "甜甜圈花园",
-		"image": "甜甜圈花园.jpg",
+		"displayName": "校训石",
+		"image": "校训石.jpg",
 		"connectedTo": ["FootballPark", "FriendshipPavilion"],
 		"directionTo": {
 			"FootballPark": "N",
