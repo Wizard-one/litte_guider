@@ -932,8 +932,10 @@ function resetAll() {
   resetAvatar();
   resetSpotCard();
   setSpotOverlayVisible(false);
+  closeEvaluationModal();
   stepInfo.textContent = "等待提交路线...";
   setMessage("已重置全部内容。", "info");
+  setActiveScreen("welcome");
 }
 
 function updateSpotCard(spotId) {
