@@ -37,6 +37,7 @@ const campusMap = document.getElementById("campusMap");
 const calibrateToggleBtn = document.getElementById("calibrateToggleBtn");
 const resetCalibrateBtn = document.getElementById("resetCalibrateBtn");
 const calibrateStatus = document.getElementById("calibrateStatus");
+const appRoot = document.querySelector(".app");
 
 let routeTokens = [];
 let spots = [];
@@ -51,6 +52,47 @@ let touchDragState = null;
 
 const ARRIVAL_DWELL_MS = 700;
 const TOUCH_DRAG_THRESHOLD = 8;
+
+function shouldUseFixedScaleLayout() {
+  const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const largeScreen = Math.max(window.innerWidth, window.innerHeight) >= 900;
+  return isCoarsePointer && largeScreen;
+}
+
+function applyFixedScaleLayout() {
+  if (!appRoot) {
+    return;
+  }
+
+  const useFixedScale = shouldUseFixedScaleLayout();
+  document.body.classList.toggle("fixed-scale-layout", useFixedScale);
+
+  if (!useFixedScale) {
+    appRoot.style.left = "";
+    appRoot.style.top = "";
+    appRoot.style.transform = "";
+    return;
+  }
+
+  appRoot.style.transform = "scale(1)";
+
+  const baseWidth = appRoot.offsetWidth;
+  const baseHeight = appRoot.offsetHeight;
+  if (!baseWidth || !baseHeight) {
+    return;
+  }
+
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const scale = Math.min(viewportWidth / baseWidth, viewportHeight / baseHeight, 1);
+
+  const left = Math.max(0, (viewportWidth - baseWidth * scale) / 2);
+  const top = Math.max(0, (viewportHeight - baseHeight * scale) / 2);
+
+  appRoot.style.left = `${left}px`;
+  appRoot.style.top = `${top}px`;
+  appRoot.style.transform = `scale(${scale})`;
+}
 
 function getEmbeddedLocConfig() {
   if (typeof window === "undefined") {
@@ -1276,7 +1318,14 @@ async function init() {
   calibrateToggleBtn.addEventListener("click", toggleCalibrationMode);
   resetCalibrateBtn.addEventListener("click", resetCalibration);
 
+  window.addEventListener("resize", applyFixedScaleLayout);
+  window.addEventListener("orientationchange", applyFixedScaleLayout);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", applyFixedScaleLayout);
+  }
+
   updateCalibrationUI();
+  applyFixedScaleLayout();
 
   setMessage("请先拖拽至少3个地点与方向，再开始演示。", "info");
 }
