@@ -42,6 +42,23 @@ const welcomeScreen = document.getElementById("welcomeScreen");
 const appScreen = document.getElementById("appScreen");
 const backToWelcomeBtn = document.getElementById("backToWelcomeBtn");
 const entryCards = document.querySelectorAll(".entry-card");
+const appModeTitle = document.getElementById("appModeTitle");
+const appModeSubtitle = document.getElementById("appModeSubtitle");
+
+const MODE_CONFIG = {
+  art: {
+    title: "🎨 帮助美术老师规划写生路线",
+    subtitle: "请规划一条能启发学生观察艺术景观的校园路线。"
+  },
+  sport: {
+    title: "⚽ 帮助体育老师规划运动路线",
+    subtitle: "请规划一条适合热身与运动体验的校园路线。"
+  },
+  custom: {
+    title: "🗺️ 自主设计校园游览路线",
+    subtitle: "请按“地点 → 方向 → 地点”拖拽路线，系统会按地图道路播放你的移动路线哦。"
+  }
+};
 
 let routeTokens = [];
 let spots = [];
@@ -53,6 +70,7 @@ let draggingSpotId = null;
 let calibrationOffsets = {};
 let loadedLocations = {};
 let touchDragState = null;
+let currentMode = "custom";
 
 const ARRIVAL_DWELL_MS = 700;
 const TOUCH_DRAG_THRESHOLD = 8;
@@ -113,9 +131,84 @@ function setActiveScreen(target) {
   applyFixedScaleLayout();
 }
 
+function setCurrentMode(mode) {
+  currentMode = MODE_CONFIG[mode] ? mode : "custom";
+  const cfg = MODE_CONFIG[currentMode];
+  if (appModeTitle) {
+    appModeTitle.textContent = cfg.title;
+  }
+  if (appModeSubtitle) {
+    appModeSubtitle.textContent = cfg.subtitle;
+  }
+}
+
+function findSpotIdByDisplayName(displayName) {
+  const match = spots.find((spot) => spot.displayName === displayName);
+  return match ? match.id : null;
+}
+
+function evaluateDemandMatch(spotIds) {
+  const artSpaceId = findSpotIdByDisplayName("艺趣空间") || "ArtSpace";
+  const footballParkId = findSpotIdByDisplayName("足球乐园") || "FootballPark";
+  const mottoStoneId = findSpotIdByDisplayName("校训石");
+
+  if (currentMode === "art") {
+    const ok = spotIds.includes(artSpaceId);
+    return {
+      ok,
+      demandText: "必须经过艺趣空间",
+      detail: ok ? "已经过艺趣空间。" : "未经过艺趣空间。"
+    };
+  }
+
+  if (currentMode === "sport") {
+    if (!mottoStoneId) {
+      return {
+        ok: false,
+        demandText: "必须从校训石出发且经过足球乐园",
+        detail: "当前数据未找到“校训石”点位，请先在地点数据中配置。"
+      };
+    }
+
+    const startsFromMottoStone = spotIds[0] === mottoStoneId;
+    const passesFootballPark = spotIds.includes(footballParkId);
+    const ok = startsFromMottoStone && passesFootballPark;
+    return {
+      ok,
+      demandText: "必须从校训石出发且经过足球乐园",
+      detail: ok
+        ? "已从校训石出发，且经过足球乐园。"
+        : `当前结果：${startsFromMottoStone ? "已从校训石出发" : "未从校训石出发"}，${passesFootballPark ? "已经过足球乐园" : "未经过足球乐园"}。`
+    };
+  }
+
+  return {
+    ok: true,
+    demandText: "自主设计路线无强制点位要求",
+    detail: "已按自主设计模式完成路线。"
+  };
+}
+
+function buildFinalEvaluationText(spotIds) {
+  const startName = spotById[spotIds[0]].displayName;
+  const endName = spotById[spotIds[spotIds.length - 1]].displayName;
+  const demand = evaluateDemandMatch(spotIds);
+  const score = demand.ok ? 5 : 3;
+  const stars = `${"★".repeat(score)}${"☆".repeat(5 - score)}`;
+
+  return [
+    `路线完成：你成功从 ${startName} 走到 ${endName}。`,
+    `星级评价：${stars}`,
+    `符合需求：${demand.ok ? "是" : "否"}`,
+    `要求说明：${demand.demandText}`,
+    `评语：${demand.detail}`
+  ].join("\n");
+}
+
 function handleEntryCardClick(event) {
   const card = event.currentTarget;
   const mode = card.dataset.entryMode;
+  setCurrentMode(mode);
   if (mode === "art") {
     setMessage("已选择：美术老师路线模式。", "ok");
   } else if (mode === "sport") {
@@ -929,11 +1022,9 @@ function handleStart() {
   updatePathPolyline(spotIds);
 
   animatePath(spotIds, () => {
-    const startName = spotById[spotIds[0]].displayName;
-    const endName = spotById[spotIds[spotIds.length - 1]].displayName;
-    const okText = `⭐⭐⭐⭐棒棒哒, 你成功从 ${startName} 走到 ${endName} 啦`;
-    setMessage(okText, "ok");
-    alert(okText);
+    const evaluationText = buildFinalEvaluationText(spotIds);
+    setMessage("路线播放完成，请查看星级评价。", "ok");
+    alert(evaluationText);
   });
 }
 
@@ -1363,6 +1454,7 @@ async function init() {
   }
 
   updateCalibrationUI();
+  setCurrentMode("custom");
   setActiveScreen("welcome");
 
   setMessage("请先拖拽至少3个地点与方向，再开始演示。", "info");
