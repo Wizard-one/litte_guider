@@ -861,7 +861,6 @@ function addRouteToken(token) {
       updateSpotCard(fromToken.value);
       updatePathPolyline(getSpotIdsFromTokens());
       setMessage(segmentResult.errorText, "bad");
-      alert(segmentResult.errorText);
       return;
     }
 
@@ -1100,7 +1099,6 @@ function handleStart() {
   const compiled = buildPathFromTokens();
   if (compiled.error) {
     setMessage(compiled.error, "bad");
-    alert(compiled.error);
     return;
   }
 

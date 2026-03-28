@@ -389,6 +389,17 @@ button {
   flex: 0 0 auto;
 }
 
+.message.bad .message-row {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.message.bad .message-avatar {
+  width: 54px;
+  height: 54px;
+}
+
 .campus-map {
   width: 100%;
   height: auto;
