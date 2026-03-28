@@ -37,6 +37,7 @@ const campusMap = document.getElementById("campusMap");
 const calibrateToggleBtn = document.getElementById("calibrateToggleBtn");
 const resetCalibrateBtn = document.getElementById("resetCalibrateBtn");
 const calibrateStatus = document.getElementById("calibrateStatus");
+const spotOverlay = document.querySelector(".spot-overlay");
 const appRoot = document.querySelector(".app");
 const welcomeScreen = document.getElementById("welcomeScreen");
 const appScreen = document.getElementById("appScreen");
@@ -129,6 +130,9 @@ function setActiveScreen(target) {
   const showWelcome = target === "welcome";
   welcomeScreen.classList.toggle("is-active", showWelcome);
   appScreen.classList.toggle("is-active", !showWelcome);
+  if (showWelcome) {
+    setSpotOverlayVisible(false);
+  }
   applyFixedScaleLayout();
 }
 
@@ -141,6 +145,13 @@ function setCurrentMode(mode) {
   if (appModeSubtitle) {
     appModeSubtitle.textContent = cfg.subtitle;
   }
+}
+
+function setSpotOverlayVisible(visible) {
+  if (!spotOverlay) {
+    return;
+  }
+  spotOverlay.classList.toggle("is-visible", visible);
 }
 
 function findSpotIdByDisplayName(displayName) {
@@ -217,6 +228,7 @@ function handleEntryCardClick(event) {
   } else {
     setMessage("已选择：自主设计模式。", "ok");
   }
+  setSpotOverlayVisible(false);
   setActiveScreen("app");
 }
 
@@ -598,7 +610,7 @@ function removeRouteTokenByIndex(index) {
   if (!spotIds.length) {
     resetAvatar();
     resetSpotCard();
-    stepInfo.textContent = "等待开始演示...";
+    stepInfo.textContent = "等待提交路线...";
   } else {
     const lastSpotId = spotIds[spotIds.length - 1];
     updateSpotCard(lastSpotId);
@@ -810,7 +822,7 @@ function addRouteToken(token) {
       setArrivedStepInfo(toToken.value);
       const spotCount = getSpotIdsFromTokens().length;
       if (spotCount >= 3) {
-        setMessage("可点击“开始演示”重播完整路线。", "ok");
+        setMessage("可点击“提交路线”重播完整路线。", "ok");
       } else {
         setMessage("请继续拖拽下一段。", "ok");
       }
@@ -855,7 +867,8 @@ function clearRouteOnly() {
   renderRouteTokens();
   resetAvatar();
   resetSpotCard();
-  stepInfo.textContent = "等待开始演示...";
+  setSpotOverlayVisible(false);
+  stepInfo.textContent = "等待提交路线...";
   setMessage("已清空路线，请重新拖拽。", "info");
 }
 
@@ -865,7 +878,8 @@ function resetAll() {
   renderRouteTokens();
   resetAvatar();
   resetSpotCard();
-  stepInfo.textContent = "等待开始演示...";
+  setSpotOverlayVisible(false);
+  stepInfo.textContent = "等待提交路线...";
   setMessage("已重置全部内容。", "info");
 }
 
@@ -1037,6 +1051,7 @@ function handleStart() {
   }
 
   const { spotIds } = compiled;
+  setSpotOverlayVisible(true);
   updatePathPolyline(spotIds);
 
   animatePath(spotIds, () => {
@@ -1403,6 +1418,7 @@ async function init() {
   renderRouteTokens();
   resetAvatar();
   resetSpotCard();
+  setSpotOverlayVisible(false);
 
   directionPool.addEventListener("dragstart", handleDragStart);
   spotPool.addEventListener("dragstart", handleDragStart);
@@ -1475,7 +1491,7 @@ async function init() {
   setCurrentMode("custom");
   setActiveScreen("welcome");
 
-  setMessage("请先拖拽至少3个地点与方向，再开始演示。", "info");
+  setMessage("请先拖拽至少3个地点与方向，再提交路线。", "info");
 }
 
 init().catch((error) => {
