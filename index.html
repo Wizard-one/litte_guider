@@ -100,6 +100,32 @@
 
   </main>
 
+  <div id="evaluationModal" class="evaluation-modal" aria-hidden="true">
+    <div class="evaluation-panel" role="dialog" aria-modal="true" aria-labelledby="evaluationTitle">
+      <h2 id="evaluationTitle">路线评价</h2>
+      <div id="evaluationGrid" class="evaluation-grid">
+        <div class="evaluation-item" data-criteria="direction">
+          <span class="evaluation-star" aria-hidden="true">⭐</span>
+          <span class="evaluation-label">定准方向</span>
+        </div>
+        <div class="evaluation-item" data-criteria="spot">
+          <span class="evaluation-star" aria-hidden="true">⭐</span>
+          <span class="evaluation-label">讲清地点</span>
+        </div>
+        <div class="evaluation-item" data-criteria="route">
+          <span class="evaluation-star" aria-hidden="true">⭐</span>
+          <span class="evaluation-label">定好路线</span>
+        </div>
+        <div class="evaluation-item" data-criteria="demand">
+          <span class="evaluation-star" aria-hidden="true">⭐</span>
+          <span class="evaluation-label">符合需求</span>
+        </div>
+      </div>
+      <p id="evaluationHint" class="evaluation-hint"></p>
+      <button id="evaluationCloseBtn" class="evaluation-close-btn" type="button">继续</button>
+    </div>
+  </div>
+
   <script src="loc-data.js"></script>
   <script src="script.js"></script>
 </body>

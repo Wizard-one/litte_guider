@@ -45,6 +45,10 @@ const backToWelcomeBtn = document.getElementById("backToWelcomeBtn");
 const entryCards = document.querySelectorAll(".entry-card");
 const appModeTitle = document.getElementById("appModeTitle");
 const appModeSubtitle = document.getElementById("appModeSubtitle");
+const evaluationModal = document.getElementById("evaluationModal");
+const evaluationGrid = document.getElementById("evaluationGrid");
+const evaluationHint = document.getElementById("evaluationHint");
+const evaluationCloseBtn = document.getElementById("evaluationCloseBtn");
 
 const MODE_CONFIG = {
   art: {
@@ -72,6 +76,7 @@ let calibrationOffsets = {};
 let loadedLocations = {};
 let touchDragState = null;
 let currentMode = "custom";
+let evaluationAnimationTimerIds = [];
 
 const ARRIVAL_DWELL_MS = 700;
 const TOUCH_DRAG_THRESHOLD = 8;
@@ -201,20 +206,69 @@ function evaluateDemandMatch(spotIds) {
   };
 }
 
-function buildFinalEvaluationText(spotIds) {
-  const startName = spotById[spotIds[0]].displayName;
-  const endName = spotById[spotIds[spotIds.length - 1]].displayName;
-  const demand = evaluateDemandMatch(spotIds);
-  const score = demand.ok ? 5 : 3;
-  const stars = `${"★".repeat(score)}${"☆".repeat(5 - score)}`;
+function clearEvaluationAnimationTimers() {
+  evaluationAnimationTimerIds.forEach((timerId) => clearTimeout(timerId));
+  evaluationAnimationTimerIds = [];
+}
 
-  return [
-    `路线完成：你成功从 ${startName} 走到 ${endName}。`,
-    `星级评价：${stars}`,
-    `符合需求：${demand.ok ? "是" : "否"}`,
-    `要求说明：${demand.demandText}`,
-    `评语：${demand.detail}`
-  ].join("\n");
+function resetEvaluationItems() {
+  if (!evaluationGrid) {
+    return;
+  }
+  evaluationGrid.querySelectorAll(".evaluation-item").forEach((item) => {
+    item.classList.remove("is-lit", "is-off");
+  });
+}
+
+function openEvaluationModal(spotIds) {
+  if (!evaluationModal || !evaluationGrid || !evaluationHint) {
+    return;
+  }
+
+  clearEvaluationAnimationTimers();
+  resetEvaluationItems();
+  evaluationModal.classList.add("is-open");
+  evaluationModal.setAttribute("aria-hidden", "false");
+
+  const demand = evaluateDemandMatch(spotIds);
+  const sequence = [
+    { key: "direction", shouldLight: true },
+    { key: "spot", shouldLight: true },
+    { key: "route", shouldLight: true },
+    { key: "demand", shouldLight: demand.ok }
+  ];
+
+  sequence.forEach((entry, index) => {
+    const timerId = setTimeout(() => {
+      const item = evaluationGrid.querySelector(`[data-criteria='${entry.key}']`);
+      if (!item) {
+        return;
+      }
+      if (entry.shouldLight) {
+        item.classList.add("is-lit");
+      } else {
+        item.classList.add("is-off");
+      }
+    }, 280 * (index + 1));
+    evaluationAnimationTimerIds.push(timerId);
+  });
+
+  const hintTimerId = setTimeout(() => {
+    evaluationHint.textContent = demand.ok
+      ? `符合需求：是。${demand.detail}`
+      : `符合需求：否。${demand.detail}`;
+  }, 280 * (sequence.length + 1));
+  evaluationAnimationTimerIds.push(hintTimerId);
+}
+
+function closeEvaluationModal() {
+  if (!evaluationModal || !evaluationHint) {
+    return;
+  }
+  clearEvaluationAnimationTimers();
+  evaluationModal.classList.remove("is-open");
+  evaluationModal.setAttribute("aria-hidden", "true");
+  evaluationHint.textContent = "";
 }
 
 function handleEntryCardClick(event) {
@@ -1055,9 +1109,8 @@ function handleStart() {
   updatePathPolyline(spotIds);
 
   animatePath(spotIds, () => {
-    const evaluationText = buildFinalEvaluationText(spotIds);
     setMessage("路线播放完成，请查看星级评价。", "ok");
-    alert(evaluationText);
+    openEvaluationModal(spotIds);
   });
 }
 
@@ -1476,6 +1529,16 @@ async function init() {
   resetCalibrateBtn.addEventListener("click", resetCalibration);
   if (backToWelcomeBtn) {
     backToWelcomeBtn.addEventListener("click", () => setActiveScreen("welcome"));
+  }
+  if (evaluationCloseBtn) {
+    evaluationCloseBtn.addEventListener("click", closeEvaluationModal);
+  }
+  if (evaluationModal) {
+    evaluationModal.addEventListener("click", (event) => {
+      if (event.target === evaluationModal) {
+        closeEvaluationModal();
+      }
+    });
   }
   entryCards.forEach((card) => {
     card.addEventListener("click", handleEntryCardClick);
