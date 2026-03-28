@@ -74,6 +74,7 @@ let currentMode = "custom";
 
 const ARRIVAL_DWELL_MS = 700;
 const TOUCH_DRAG_THRESHOLD = 8;
+const MESSAGE_AVATAR_SRC = "img/avatar.png";
 
 function shouldUseFixedScaleLayout() {
   const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
@@ -455,7 +456,7 @@ function validateSegment(fromId, providedDir, toId) {
     const providedLabel = formatDirectionLabels(providedDirs) || "未知方向";
     return {
       ok: false,
-      errorText: `x 无法通行: 从${from?.displayName || "未知地点"} 向 ${providedLabel} 没有路哦`
+      errorText: `雏燕讲解员请注意：\n 这条路行不通，再找找正确的路吧！`
     };
   }
 
@@ -469,7 +470,7 @@ function validateSegment(fromId, providedDir, toId) {
     const providedLabel = formatDirectionLabels(providedDirs) || "未知方向";
     return {
       ok: false,
-      errorText: `x 无法通行: 从${from.displayName} 到 ${to.displayName} 需要方向 ${requiredLabel}，你输入的是 ${providedLabel}`
+      errorText: `雏燕讲解员请注意：\n这条路行不通，再找找正确的路吧！`
     };
   }
 
@@ -481,7 +482,24 @@ function getUsedSpotIds() {
 }
 
 function setMessage(text, type = "info") {
-  message.textContent = text;
+  message.innerHTML = "";
+
+  const row = document.createElement("span");
+  row.className = "message-row";
+
+  if (type === "bad") {
+    const icon = document.createElement("img");
+    icon.className = "message-avatar";
+    icon.src = MESSAGE_AVATAR_SRC;
+    icon.alt = "提示";
+    row.appendChild(icon);
+  }
+
+  const textNode = document.createElement("span");
+  textNode.textContent = text;
+  row.appendChild(textNode);
+  message.appendChild(row);
+
   message.className = "message";
   if (type === "ok") {
     message.classList.add("ok");

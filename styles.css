@@ -376,6 +376,19 @@ button {
   font-size: 14px;
 }
 
+.message-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message-avatar {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
 .campus-map {
   width: 100%;
   height: auto;
