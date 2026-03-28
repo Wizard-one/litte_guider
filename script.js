@@ -47,8 +47,10 @@ let isCalibrationMode = false;
 let draggingSpotId = null;
 let calibrationOffsets = {};
 let loadedLocations = {};
+let touchDragState = null;
 
 const ARRIVAL_DWELL_MS = 700;
+const TOUCH_DRAG_THRESHOLD = 8;
 
 function getEmbeddedLocConfig() {
   if (typeof window === "undefined") {
@@ -890,6 +892,176 @@ function handleDragStart(event) {
   event.dataTransfer.setData("text/plain", JSON.stringify(payload));
 }
 
+function readDragPayloadFromElement(target) {
+  const routeToken = target.closest(".route-token");
+  if (routeToken && routeToken.dataset.routeIndex) {
+    return {
+      payload: {
+        type: "route-token",
+        value: Number(routeToken.dataset.routeIndex)
+      },
+      sourceElement: routeToken
+    };
+  }
+
+  const dragItem = target.closest(".drag-item");
+  if (dragItem && !dragItem.disabled) {
+    return {
+      payload: {
+        type: dragItem.dataset.type,
+        value: dragItem.dataset.value
+      },
+      sourceElement: dragItem
+    };
+  }
+
+  return null;
+}
+
+function clearTouchDropVisuals() {
+  routeDropZone.classList.remove("drag-over");
+  trashDropZone.classList.remove("drag-over");
+}
+
+function detectTouchDropTarget(clientX, clientY) {
+  const target = document.elementFromPoint(clientX, clientY);
+  if (!target) {
+    return null;
+  }
+  if (target.closest("#trashDropZone")) {
+    return "trash";
+  }
+  if (target.closest("#routeDropZone")) {
+    return "route";
+  }
+  return null;
+}
+
+function beginTouchDrag(clientX, clientY) {
+  if (!touchDragState || touchDragState.isDragging) {
+    return;
+  }
+
+  const ghost = touchDragState.sourceElement.cloneNode(true);
+  ghost.classList.add("touch-drag-ghost");
+  ghost.style.position = "fixed";
+  ghost.style.left = `${clientX}px`;
+  ghost.style.top = `${clientY}px`;
+  ghost.style.transform = "translate(-50%, -50%)";
+  ghost.style.pointerEvents = "none";
+  ghost.style.zIndex = "9999";
+  document.body.appendChild(ghost);
+
+  touchDragState.isDragging = true;
+  touchDragState.ghost = ghost;
+}
+
+function moveTouchDrag(clientX, clientY) {
+  if (!touchDragState?.isDragging) {
+    return;
+  }
+
+  touchDragState.ghost.style.left = `${clientX}px`;
+  touchDragState.ghost.style.top = `${clientY}px`;
+
+  const dropTarget = detectTouchDropTarget(clientX, clientY);
+  clearTouchDropVisuals();
+  if (dropTarget === "route") {
+    routeDropZone.classList.add("drag-over");
+  } else if (dropTarget === "trash") {
+    trashDropZone.classList.add("drag-over");
+  }
+}
+
+function endTouchDrag(clientX, clientY) {
+  if (!touchDragState) {
+    return;
+  }
+
+  const { isDragging, payload, ghost } = touchDragState;
+  if (ghost) {
+    ghost.remove();
+  }
+
+  clearTouchDropVisuals();
+
+  if (isDragging) {
+    const dropTarget = detectTouchDropTarget(clientX, clientY);
+    if (dropTarget === "route" && payload.type !== "route-token") {
+      addRouteToken(payload);
+    } else if (dropTarget === "trash" && payload.type === "route-token") {
+      removeRouteTokenByIndex(Number(payload.value));
+    }
+  }
+
+  touchDragState = null;
+}
+
+function cancelTouchDrag() {
+  if (!touchDragState) {
+    return;
+  }
+  if (touchDragState.ghost) {
+    touchDragState.ghost.remove();
+  }
+  clearTouchDropVisuals();
+  touchDragState = null;
+}
+
+function handleTouchDragPointerDown(event) {
+  if (event.pointerType !== "touch" || isPlaying) {
+    return;
+  }
+
+  const parsed = readDragPayloadFromElement(event.target);
+  if (!parsed) {
+    return;
+  }
+
+  touchDragState = {
+    pointerId: event.pointerId,
+    payload: parsed.payload,
+    sourceElement: parsed.sourceElement,
+    startX: event.clientX,
+    startY: event.clientY,
+    isDragging: false,
+    ghost: null
+  };
+}
+
+function handleTouchDragPointerMove(event) {
+  if (!touchDragState || event.pointerId !== touchDragState.pointerId) {
+    return;
+  }
+
+  const dx = event.clientX - touchDragState.startX;
+  const dy = event.clientY - touchDragState.startY;
+  const moved = Math.hypot(dx, dy);
+
+  if (!touchDragState.isDragging && moved >= TOUCH_DRAG_THRESHOLD) {
+    beginTouchDrag(event.clientX, event.clientY);
+  }
+
+  if (touchDragState.isDragging) {
+    event.preventDefault();
+    moveTouchDrag(event.clientX, event.clientY);
+  }
+}
+
+function handleTouchDragPointerUp(event) {
+  if (!touchDragState || event.pointerId !== touchDragState.pointerId) {
+    return;
+  }
+  endTouchDrag(event.clientX, event.clientY);
+}
+
+function handleTouchDragPointerCancel(event) {
+  if (!touchDragState || event.pointerId !== touchDragState.pointerId) {
+    return;
+  }
+  cancelTouchDrag();
+}
+
 function handleSpotPreviewClick(event) {
   const target = event.target.closest(".spot-item");
   if (!target) {
@@ -1076,6 +1248,13 @@ async function init() {
   routeDropZone.addEventListener("drop", handleDrop);
 
   routeTimeline.addEventListener("dragstart", handleDragStart);
+
+  spotPool.addEventListener("pointerdown", handleTouchDragPointerDown);
+  directionPool.addEventListener("pointerdown", handleTouchDragPointerDown);
+  routeTimeline.addEventListener("pointerdown", handleTouchDragPointerDown);
+  document.addEventListener("pointermove", handleTouchDragPointerMove, { passive: false });
+  document.addEventListener("pointerup", handleTouchDragPointerUp);
+  document.addEventListener("pointercancel", handleTouchDragPointerCancel);
 
   trashDropZone.addEventListener("dragenter", (event) => {
     event.preventDefault();

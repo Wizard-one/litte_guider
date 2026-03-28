@@ -201,6 +201,11 @@ body {
   align-self: center;
 }
 
+.touch-drag-ghost {
+  opacity: 0.9;
+  box-shadow: 0 10px 24px rgba(30, 64, 175, 0.22);
+}
+
 .route-tools {
   margin-top: 8px;
 }
