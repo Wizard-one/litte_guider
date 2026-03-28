@@ -792,9 +792,9 @@ function addRouteToken(token) {
       setArrivedStepInfo(toToken.value);
       const spotCount = getSpotIdsFromTokens().length;
       if (spotCount >= 3) {
-        setMessage("当前路径合法，可点击“开始演示”重播完整路线。", "ok");
+        setMessage("可点击“开始演示”重播完整路线。", "ok");
       } else {
-        setMessage("该段路径合法，请继续拖拽下一段。", "ok");
+        setMessage("请继续拖拽下一段。", "ok");
       }
     });
     return;
