@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>校园小导游 · 路线挑战</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
   <main id="welcomeScreen" class="welcome-screen scale-target is-active" aria-label="欢迎界面">
     <section class="welcome-hero">
@@ -45,10 +47,12 @@
         <h2>校园地图</h2>
         <div class="map-stage">
           <svg id="campusMap" viewBox="0 0 1035 1052" class="campus-map" aria-label="校园地图">
-            <image href="img/地点参考.png" x="0" y="0" width="1035" height="1052" preserveAspectRatio="xMidYMid meet"></image>
+            <image href="img/地点参考.png" x="0" y="0" width="1035" height="1052" preserveAspectRatio="xMidYMid meet">
+            </image>
             <g id="roads"></g>
             <g id="spotLayer"></g>
-            <polyline id="userPath" fill="none" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            <polyline id="userPath" fill="none" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round"
+              stroke-linejoin="round"></polyline>
             <image id="playerAvatar" href="img/avatar.png" width="150" height="150" visibility="hidden"></image>
           </svg>
           <div class="spot-overlay">
@@ -63,12 +67,12 @@
 
 
         <div class="operation-pools">
-          <section class="operation-group">
+          <section class="operation-group site">
             <h3>选景点</h3>
             <div id="spotPool" class="spot-pool" aria-label="景点拖拽池"></div>
           </section>
 
-          <section class="operation-group">
+          <section class="operation-group angle">
             <h3>定方向</h3>
             <div id="directionPool" class="direction-pool" aria-label="方向拖拽池">
               <button class="drag-item dir-item" draggable="true" data-type="direction" data-value="E">东</button>
@@ -129,4 +133,5 @@
   <script src="loc-data.js"></script>
   <script src="script.js"></script>
 </body>
+
 </html>

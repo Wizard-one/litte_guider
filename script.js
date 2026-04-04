@@ -53,11 +53,11 @@ const evaluationCloseBtn = document.getElementById("evaluationCloseBtn");
 const MODE_CONFIG = {
   art: {
     title: "🎨 帮助美术老师规划写生路线",
-    subtitle: "美术【我在艺趣空间看展。欣赏完同学们的作品后一路向南走，最后向西到达友谊之亭。】"
+    subtitle: "【我在艺趣空间看展。欣赏完同学们的作品后一路向南走，最后向西到达友谊之亭。】"
   },
   sport: {
     title: "⚽ 帮助体育老师规划运动路线",
-    subtitle: "体育【我在校训石拍完照，想去参观足球乐园和恐龙角，最后回到雏燕奋飞】"
+    subtitle: "【我在校训石拍完照，想去参观足球乐园和恐龙角，最后回到雏燕奋飞】"
   },
   custom: {
     title: "🗺️ 自主设计校园游览路线",
