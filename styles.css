@@ -135,11 +135,26 @@ body.fixed-scale-layout .scale-target.is-active {
   color: white;
   padding: 18px;
   border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 12px;
+  row-gap: 8px;
+  flex-wrap: wrap;
+}
+
+.title-group {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .topbar h1 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 28px;
+  min-width: 0;
 }
 
 .topbar p {
@@ -148,7 +163,8 @@ body.fixed-scale-layout .scale-target.is-active {
 }
 
 .back-home-btn {
-  margin-top: 10px;
+  margin-top: 0;
+  white-space: nowrap;
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.45);
   color: #fff;
@@ -312,10 +328,6 @@ body.fixed-scale-layout .scale-target.is-active {
   box-shadow: 0 10px 24px rgba(30, 64, 175, 0.22);
 }
 
-.route-tools {
-  margin-top: 8px;
-}
-
 .trash-drop-zone {
   border: 1px dashed #cbd5e1;
   border-radius: 10px;
@@ -344,6 +356,11 @@ body.fixed-scale-layout .scale-target.is-active {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
+}
+
+.route-actions {
+  justify-content: flex-start;
 }
 
 button {
