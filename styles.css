@@ -197,22 +197,46 @@ body.fixed-scale-layout .scale-target.is-active {
 }
 
 .operation-panel h3 {
-  font-size: 17px;
-  margin-top: 14px;
-  margin-bottom: 8px;
+  font-size: 28px;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.operation-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.operation-panel h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.operation-pools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.operation-group {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
 }
 
 .spot-pool {
   display: grid;
-  grid-template-columns: repeat(3, minmax(96px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  grid-template-rows: repeat(3, auto);
+  gap: 12px;
 }
 
 .direction-pool {
   display: grid;
-  grid-template-columns: repeat(2, minmax(96px, 1fr));
-  grid-template-rows: repeat(2, auto);
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(4, auto);
+  gap: 12px;
 }
 
 .drag-item {
@@ -221,7 +245,9 @@ body.fixed-scale-layout .scale-target.is-active {
   background: #eff6ff;
   color: #1e3a8a;
   font-weight: 700;
-  padding: 10px 8px;
+  padding: 14px 12px;
+  font-size: 28px;
+  line-height: 1.2;
   cursor: grab;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
@@ -237,8 +263,8 @@ body.fixed-scale-layout .scale-target.is-active {
 }
 
 .spot-item {
-  min-height: 88px;
-  padding: 6px;
+  min-height: 118px;
+  padding: 10px;
   display: grid;
   grid-template-rows: 1fr auto;
   align-items: center;
@@ -249,7 +275,7 @@ body.fixed-scale-layout .scale-target.is-active {
 
 .spot-thumb {
   width: 100%;
-  height: 46px;
+  height: 58px;
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid #bfdbfe;
@@ -258,13 +284,11 @@ body.fixed-scale-layout .scale-target.is-active {
 }
 
 .spot-name {
-  font-size: 12px;
+  font-size: 28px;
+  font-weight: 700;
   line-height: 1.2;
   color: #1e3a8a;
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   width: 100%;
 }
 
@@ -646,8 +670,19 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .operation-pools {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-panel h2,
+  .operation-panel h3,
+  .drag-item,
+  .spot-name {
+    font-size: 24px;
+  }
+
   .spot-pool {
-    grid-template-columns: repeat(2, minmax(96px, 1fr));
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
   }
 
   .spot-overlay {
