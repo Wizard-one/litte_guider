@@ -257,15 +257,44 @@ function findSpotIdByDisplayName(displayName) {
 
 function evaluateDemandMatch(spotIds) {
   const artSpaceId = findSpotIdByDisplayName("艺趣空间") || "ArtSpace";
+  const dinosaurCornerId = findSpotIdByDisplayName("恐龙角") || "DinosaurCorner";
   const footballParkId = findSpotIdByDisplayName("足球乐园") || "FootballPark";
   const mottoStoneId = findSpotIdByDisplayName("校训石");
+  const friendshipPavilionId = findSpotIdByDisplayName("友谊之亭") || "FriendshipPavilion";
 
   if (currentMode === "art") {
-    const ok = spotIds.includes(artSpaceId);
+    if (!mottoStoneId) {
+      return {
+        ok: false,
+        demandText: "必须从艺趣空间出发，向南经过恐龙角、足球乐园、校训石，再向西到达友谊之亭",
+        detail: ""
+      };
+    }
+
+    const requiredSpotPath = [
+      artSpaceId,
+      dinosaurCornerId,
+      footballParkId,
+      mottoStoneId,
+      friendshipPavilionId
+    ];
+    const hasExactSpotPath =
+      spotIds.length === requiredSpotPath.length
+      && requiredSpotPath.every((spotId, index) => spotIds[index] === spotId);
+
+    const directionTokens = routeTokens.filter((token) => token.type === "direction").map((token) => token.value);
+    const requiredDirectionPath = ["S", "S", "S", "W"];
+    const hasExactDirectionPath =
+      directionTokens.length === requiredDirectionPath.length
+      && requiredDirectionPath.every((dirCode, index) => directionTokens[index] === dirCode);
+
+    const ok = hasExactSpotPath && hasExactDirectionPath;
     return {
       ok,
-      demandText: "必须经过艺趣空间",
-      detail: ok ? "已经过艺趣空间。" : "未经过艺趣空间。"
+      demandText: "必须从艺趣空间出发，向南经过恐龙角、足球乐园、校训石，再向西到达友谊之亭",
+      detail: ok
+        ? "已满足美术老师路线要求。"
+        : ""
     };
   }
 
@@ -338,7 +367,7 @@ function openEvaluationModal(spotIds) {
   const showHint = () => {
     evaluationHint.textContent = demand.ok
       ? `恭喜你成为了四星讲解员。${demand.detail}`
-      : `再看看老师的需求哦？${demand.detail}`;
+      : `再看一看老师的需求哦${demand.detail}`;
   };
 
   const runStep = (index) => {
