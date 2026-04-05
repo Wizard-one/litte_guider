@@ -85,12 +85,12 @@ const MESSAGE_AVATAR_SRC = "img/avatar.png";
 const EVALUATION_TITLE_DEFAULT = "路线评价";
 const EVALUATION_TITLE_ERROR = "路线提示";
 const STAR_SOUND_SRCS = [
-  "audio/star1.mp3",
-  "audio/star2.mp3",
-  "audio/star3.mp3",
-  "audio/star4.mp3"
+  "audio/star1.wav",
+  "audio/star2.wav",
+  "audio/star3.wav",
+  "audio/star4.wav"
 ];
-const COMPLETE_SOUND_SRC = "audio/complete.mp3";
+const COMPLETE_SOUND_SRC = "audio/complete.wav";
 const ERROR_SOUND_SRC = "audio/error.mp3";
 
 const starSounds = STAR_SOUND_SRCS.map((src) => {
