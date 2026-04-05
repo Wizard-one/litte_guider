@@ -1503,6 +1503,16 @@ function setupMobilePinchZoomGuard() {
   document.addEventListener("gestureend", (event) => event.preventDefault());
 }
 
+function setupMobileLongPressGuard() {
+  if (typeof window === "undefined" || !window.matchMedia("(pointer: coarse)").matches) {
+    return;
+  }
+
+  // Prevent long-press context menu / magnifier-like interactions on mobile browsers.
+  document.addEventListener("contextmenu", (event) => event.preventDefault());
+  document.addEventListener("selectstart", (event) => event.preventDefault());
+}
+
 function handleSpotPreviewClick(event) {
   const target = event.target.closest(".spot-item");
   if (!target) {
@@ -1649,6 +1659,7 @@ async function init() {
   document.addEventListener("pointercancel", handleTouchDragPointerCancel);
   setupMobileDoubleTapGuard();
   setupMobilePinchZoomGuard();
+  setupMobileLongPressGuard();
 
   trashDropZone.addEventListener("dragenter", (event) => {
     event.preventDefault();
