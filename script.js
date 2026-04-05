@@ -343,7 +343,11 @@ function openEvaluationModal(spotIds) {
 
   const runStep = (index) => {
     if (index >= sequence.length) {
-      playSoundAndWait(completeSound, showHint, 420);
+      if (demand.ok) {
+        playSoundAndWait(completeSound, showHint, 420);
+      } else {
+        showHint();
+      }
       return;
     }
 
