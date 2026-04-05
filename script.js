@@ -49,6 +49,7 @@ const evaluationModal = document.getElementById("evaluationModal");
 const evaluationGrid = document.getElementById("evaluationGrid");
 const evaluationHint = document.getElementById("evaluationHint");
 const evaluationCloseBtn = document.getElementById("evaluationCloseBtn");
+const evaluationTitle = document.getElementById("evaluationTitle");
 
 const MODE_CONFIG = {
   art: {
@@ -81,6 +82,8 @@ let evaluationAnimationTimerIds = [];
 const ARRIVAL_DWELL_MS = 700;
 const TOUCH_DRAG_THRESHOLD = 8;
 const MESSAGE_AVATAR_SRC = "img/avatar.png";
+const EVALUATION_TITLE_DEFAULT = "路线评价";
+const EVALUATION_TITLE_ERROR = "路线提示";
 
 function shouldUseFixedScaleLayout() {
   const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
@@ -229,8 +232,13 @@ function openEvaluationModal(spotIds) {
 
   clearEvaluationAnimationTimers();
   resetEvaluationItems();
+  evaluationHint.textContent = "";
+  evaluationModal.classList.remove("is-error");
   evaluationModal.classList.add("is-open");
   evaluationModal.setAttribute("aria-hidden", "false");
+  if (evaluationTitle) {
+    evaluationTitle.textContent = EVALUATION_TITLE_DEFAULT;
+  }
 
   const demand = evaluateDemandMatch(spotIds);
   const sequence = [
@@ -263,13 +271,31 @@ function openEvaluationModal(spotIds) {
   evaluationAnimationTimerIds.push(hintTimerId);
 }
 
+function openEvaluationErrorModal(errorText) {
+  if (!evaluationModal || !evaluationHint) {
+    return;
+  }
+
+  clearEvaluationAnimationTimers();
+  resetEvaluationItems();
+  evaluationModal.classList.add("is-open", "is-error");
+  evaluationModal.setAttribute("aria-hidden", "false");
+  if (evaluationTitle) {
+    evaluationTitle.textContent = EVALUATION_TITLE_ERROR;
+  }
+  evaluationHint.textContent = errorText;
+}
+
 function closeEvaluationModal() {
   if (!evaluationModal || !evaluationHint) {
     return;
   }
   clearEvaluationAnimationTimers();
-  evaluationModal.classList.remove("is-open");
+  evaluationModal.classList.remove("is-open", "is-error");
   evaluationModal.setAttribute("aria-hidden", "true");
+  if (evaluationTitle) {
+    evaluationTitle.textContent = EVALUATION_TITLE_DEFAULT;
+  }
   evaluationHint.textContent = "";
 }
 
@@ -810,7 +836,7 @@ function addRouteToken(token) {
       renderRouteTokens();
       updateSpotCard(fromToken.value);
       updatePathPolyline(getSpotIdsFromTokens());
-      setMessage(segmentResult.errorText, "bad");
+      openEvaluationErrorModal(segmentResult.errorText);
       return;
     }
 
@@ -1050,7 +1076,11 @@ function handleStart() {
 
   const compiled = buildPathFromTokens();
   if (compiled.error) {
-    setMessage(compiled.error, "bad");
+    if (compiled.error.includes("这条路行不通")) {
+      openEvaluationErrorModal(compiled.error);
+    } else {
+      setMessage(compiled.error, "bad");
+    }
     return;
   }
 
@@ -1263,6 +1293,28 @@ function handleTouchDragPointerCancel(event) {
   cancelTouchDrag();
 }
 
+function setupMobileDoubleTapGuard() {
+  if (typeof window === "undefined" || !window.matchMedia("(pointer: coarse)").matches) {
+    return;
+  }
+
+  let lastTouchEndAt = 0;
+  document.addEventListener(
+    "touchend",
+    (event) => {
+      if (event.changedTouches && event.changedTouches.length > 1) {
+        return;
+      }
+      const now = Date.now();
+      if (now - lastTouchEndAt <= 320) {
+        event.preventDefault();
+      }
+      lastTouchEndAt = now;
+    },
+    { passive: false }
+  );
+}
+
 function handleSpotPreviewClick(event) {
   const target = event.target.closest(".spot-item");
   if (!target) {
@@ -1407,6 +1459,7 @@ async function init() {
   document.addEventListener("pointermove", handleTouchDragPointerMove, { passive: false });
   document.addEventListener("pointerup", handleTouchDragPointerUp);
   document.addEventListener("pointercancel", handleTouchDragPointerCancel);
+  setupMobileDoubleTapGuard();
 
   trashDropZone.addEventListener("dragenter", (event) => {
     event.preventDefault();

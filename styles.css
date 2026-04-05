@@ -378,14 +378,14 @@ body.fixed-scale-layout .scale-target.is-active {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13.3px;
+  font-weight: 800;
+  line-height: 1.2;
   user-select: none;
 }
 
 .trash-drop-zone#trashDropZone{
   height: 100%;
-  font-size: 13.3px;
-  font-weight: 800;
 }
 
 .trash-drop-zone.drag-over {
@@ -426,6 +426,41 @@ button {
 .secondary {
   background: var(--primary-soft);
   color: #1e3a8a;
+}
+
+#backToWelcomeBtn,
+#startBtn,
+#resetBtn,
+#evaluationCloseBtn,
+#trashDropZone {
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  padding: 8px 10px;
+  font-size: 13.3px;
+  font-weight: 800;
+  line-height: 1.2;
+  min-height: 40px;
+}
+
+#backToWelcomeBtn,
+#startBtn,
+#resetBtn,
+#evaluationCloseBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#backToWelcomeBtn:hover,
+#startBtn:hover,
+#resetBtn:hover,
+#evaluationCloseBtn:hover,
+#trashDropZone:hover {
+  border-color: #ea580c;
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .ghost {
@@ -650,8 +685,55 @@ button {
 
 .evaluation-close-btn {
   margin-top: 12px;
-  background: #2563eb;
-  color: #fff;
+}
+
+.evaluation-modal.is-error .evaluation-grid {
+  display: none;
+}
+
+.evaluation-modal.is-error .evaluation-panel h2 {
+  color: #b91c1c;
+}
+
+.evaluation-modal.is-error .evaluation-hint {
+  margin-top: 0;
+  min-height: 0;
+  white-space: pre-line;
+  color: #b91c1c;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+@media (pointer: coarse) {
+  body {
+    touch-action: manipulation;
+  }
+
+  body,
+  .welcome-screen,
+  .app,
+  .operation-panel,
+  .entry-card,
+  .drag-item,
+  .route-drop-zone,
+  .route-timeline,
+  .route-token,
+  .trash-drop-zone,
+  button {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .entry-card,
+  .drag-item,
+  .route-token,
+  .route-drop-zone,
+  .trash-drop-zone,
+  button {
+    touch-action: manipulation;
+  }
 }
 
 @keyframes star-pop {
