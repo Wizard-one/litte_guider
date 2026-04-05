@@ -84,6 +84,54 @@ const TOUCH_DRAG_THRESHOLD = 8;
 const MESSAGE_AVATAR_SRC = "img/avatar.png";
 const EVALUATION_TITLE_DEFAULT = "路线评价";
 const EVALUATION_TITLE_ERROR = "路线提示";
+const STAR_SOUND_SRCS = [
+  "audio/star1.mp3",
+  "audio/star2.mp3",
+  "audio/star3.mp3",
+  "audio/star4.mp3"
+];
+const COMPLETE_SOUND_SRC = "audio/complete.mp3";
+const ERROR_SOUND_SRC = "audio/error.mp3";
+
+const starSounds = STAR_SOUND_SRCS.map((src) => {
+  const audio = new Audio(src);
+  audio.preload = "auto";
+  return audio;
+});
+const completeSound = new Audio(COMPLETE_SOUND_SRC);
+completeSound.preload = "auto";
+const errorSound = new Audio(ERROR_SOUND_SRC);
+errorSound.preload = "auto";
+
+function playSound(audio) {
+  if (!audio) {
+    return;
+  }
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    const promise = audio.play();
+    if (promise && typeof promise.catch === "function") {
+      promise.catch(() => {});
+    }
+  } catch (_error) {
+    // Ignore playback failures caused by browser autoplay policies.
+  }
+}
+
+function stopEvaluationSounds() {
+  [...starSounds, completeSound, errorSound].forEach((audio) => {
+    if (!audio) {
+      return;
+    }
+    try {
+      audio.pause();
+      audio.currentTime = 0;
+    } catch (_error) {
+      // Ignore stop failures.
+    }
+  });
+}
 
 function shouldUseFixedScaleLayout() {
   const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
@@ -214,6 +262,7 @@ function evaluateDemandMatch(spotIds) {
 function clearEvaluationAnimationTimers() {
   evaluationAnimationTimerIds.forEach((timerId) => clearTimeout(timerId));
   evaluationAnimationTimerIds = [];
+  stopEvaluationSounds();
 }
 
 function resetEvaluationItems() {
@@ -256,6 +305,10 @@ function openEvaluationModal(spotIds) {
       }
       if (entry.shouldLight) {
         item.classList.add("is-lit");
+        playSound(starSounds[index]);
+        if (index === sequence.length - 1) {
+          playSound(completeSound);
+        }
       } else {
         item.classList.add("is-off");
       }
@@ -300,6 +353,7 @@ function openEvaluationErrorModal(errorText) {
   row.appendChild(icon);
   row.appendChild(textNode);
   evaluationHint.appendChild(row);
+  playSound(errorSound);
 }
 
 function closeEvaluationModal() {
