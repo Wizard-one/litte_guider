@@ -103,6 +103,9 @@ completeSound.preload = "auto";
 const errorSound = new Audio(ERROR_SOUND_SRC);
 errorSound.preload = "auto";
 
+let queuedSounds = [];
+let activeQueuedSound = null;
+
 function playSound(audio) {
   if (!audio) {
     return;
@@ -119,7 +122,40 @@ function playSound(audio) {
   }
 }
 
+function playNextQueuedSound() {
+  if (!queuedSounds.length) {
+    activeQueuedSound = null;
+    return;
+  }
+
+  const nextAudio = queuedSounds.shift();
+  activeQueuedSound = nextAudio;
+
+  const handleEnded = () => {
+    nextAudio.removeEventListener("ended", handleEnded);
+    if (activeQueuedSound === nextAudio) {
+      activeQueuedSound = null;
+    }
+    playNextQueuedSound();
+  };
+
+  nextAudio.addEventListener("ended", handleEnded);
+  playSound(nextAudio);
+}
+
+function enqueueSound(audio) {
+  if (!audio) {
+    return;
+  }
+  queuedSounds.push(audio);
+  if (!activeQueuedSound) {
+    playNextQueuedSound();
+  }
+}
+
 function stopEvaluationSounds() {
+  queuedSounds = [];
+  activeQueuedSound = null;
   [...starSounds, completeSound, errorSound].forEach((audio) => {
     if (!audio) {
       return;
@@ -305,9 +341,9 @@ function openEvaluationModal(spotIds) {
       }
       if (entry.shouldLight) {
         item.classList.add("is-lit");
-        playSound(starSounds[index]);
+        enqueueSound(starSounds[index]);
         if (index === sequence.length - 1) {
-          playSound(completeSound);
+          enqueueSound(completeSound);
         }
       } else {
         item.classList.add("is-off");
