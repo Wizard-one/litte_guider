@@ -674,11 +674,27 @@ button {
 .evaluation-modal.is-error .evaluation-hint {
   margin-top: 0;
   min-height: 0;
-  white-space: pre-line;
   color: #b91c1c;
   font-size: 26px;
   font-weight: 700;
   line-height: 1.35;
+}
+
+.evaluation-hint-row {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.evaluation-hint-avatar {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.evaluation-hint-text {
+  white-space: pre-line;
 }
 
 @media (pointer: coarse) {

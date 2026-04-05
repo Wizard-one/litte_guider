@@ -283,7 +283,23 @@ function openEvaluationErrorModal(errorText) {
   if (evaluationTitle) {
     evaluationTitle.textContent = EVALUATION_TITLE_ERROR;
   }
-  evaluationHint.textContent = errorText;
+  evaluationHint.innerHTML = "";
+
+  const row = document.createElement("span");
+  row.className = "evaluation-hint-row";
+
+  const icon = document.createElement("img");
+  icon.className = "evaluation-hint-avatar";
+  icon.src = MESSAGE_AVATAR_SRC;
+  icon.alt = "提示";
+
+  const textNode = document.createElement("span");
+  textNode.className = "evaluation-hint-text";
+  textNode.textContent = errorText;
+
+  row.appendChild(icon);
+  row.appendChild(textNode);
+  evaluationHint.appendChild(row);
 }
 
 function closeEvaluationModal() {
@@ -1315,6 +1331,29 @@ function setupMobileDoubleTapGuard() {
   );
 }
 
+function setupMobilePinchZoomGuard() {
+  if (typeof window === "undefined" || !window.matchMedia("(pointer: coarse)").matches) {
+    return;
+  }
+
+  const preventMultiTouchZoom = (event) => {
+    if (event.touches && event.touches.length > 1) {
+      event.preventDefault();
+    }
+    if (typeof event.scale === "number" && event.scale !== 1) {
+      event.preventDefault();
+    }
+  };
+
+  document.addEventListener("touchstart", preventMultiTouchZoom, { passive: false });
+  document.addEventListener("touchmove", preventMultiTouchZoom, { passive: false });
+
+  // iOS Safari pinch gesture events.
+  document.addEventListener("gesturestart", (event) => event.preventDefault());
+  document.addEventListener("gesturechange", (event) => event.preventDefault());
+  document.addEventListener("gestureend", (event) => event.preventDefault());
+}
+
 function handleSpotPreviewClick(event) {
   const target = event.target.closest(".spot-item");
   if (!target) {
@@ -1460,6 +1499,7 @@ async function init() {
   document.addEventListener("pointerup", handleTouchDragPointerUp);
   document.addEventListener("pointercancel", handleTouchDragPointerCancel);
   setupMobileDoubleTapGuard();
+  setupMobilePinchZoomGuard();
 
   trashDropZone.addEventListener("dragenter", (event) => {
     event.preventDefault();
