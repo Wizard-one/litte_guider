@@ -431,36 +431,10 @@ button {
 #backToWelcomeBtn,
 #startBtn,
 #resetBtn,
-#evaluationCloseBtn,
-#trashDropZone {
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
-  background: #fff7ed;
-  color: #9a3412;
-  padding: 8px 10px;
+#evaluationCloseBtn {
   font-size: 13.3px;
   font-weight: 800;
   line-height: 1.2;
-  min-height: 40px;
-}
-
-#backToWelcomeBtn,
-#startBtn,
-#resetBtn,
-#evaluationCloseBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#backToWelcomeBtn:hover,
-#startBtn:hover,
-#resetBtn:hover,
-#evaluationCloseBtn:hover,
-#trashDropZone:hover {
-  border-color: #ea580c;
-  background: #ffedd5;
-  color: #9a3412;
 }
 
 .ghost {
@@ -685,6 +659,8 @@ button {
 
 .evaluation-close-btn {
   margin-top: 12px;
+  background: #2563eb;
+  color: #fff;
 }
 
 .evaluation-modal.is-error .evaluation-grid {
