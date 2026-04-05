@@ -30,7 +30,7 @@
 	},
 	"offset": {
 		"dx": 112,
-		"dy": -23
+		"dy": 110
 	}
 	},
 	"DonutGarden": {
@@ -81,7 +81,7 @@
 	},
 	"offset": {
 		"dx": 112,
-		"dy": -85
+		"dy": 50
 	}
 	},
 	"YoungSwallowsSoar": {
