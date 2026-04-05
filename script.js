@@ -103,9 +103,6 @@ completeSound.preload = "auto";
 const errorSound = new Audio(ERROR_SOUND_SRC);
 errorSound.preload = "auto";
 
-let queuedSounds = [];
-let activeQueuedSound = null;
-
 function playSound(audio) {
   if (!audio) {
     return;
@@ -122,51 +119,56 @@ function playSound(audio) {
   }
 }
 
-function playNextQueuedSound() {
-  if (!queuedSounds.length) {
-    activeQueuedSound = null;
+function playSoundAndWait(audio, onDone, fallbackMs = 360) {
+  if (!audio) {
+    onDone();
     return;
   }
 
-  const nextAudio = queuedSounds.shift();
-  activeQueuedSound = nextAudio;
+  let finished = false;
+  let fallbackTimerId = null;
 
-  const handleEnded = () => {
-    nextAudio.removeEventListener("ended", handleEnded);
-    if (activeQueuedSound === nextAudio) {
-      activeQueuedSound = null;
+  const finish = () => {
+    if (finished) {
+      return;
     }
-    playNextQueuedSound();
+    finished = true;
+    if (fallbackTimerId) {
+      clearTimeout(fallbackTimerId);
+    }
+    audio.removeEventListener("ended", finish);
+    onDone();
   };
 
-  nextAudio.addEventListener("ended", handleEnded);
-  playSound(nextAudio);
+  audio.addEventListener("ended", finish);
+  playSound(audio);
+
+  const durationMs = Number.isFinite(audio.duration) && audio.duration > 0
+    ? Math.round(audio.duration * 1000) + 120
+    : fallbackMs;
+  fallbackTimerId = setTimeout(finish, durationMs);
+  evaluationAnimationTimerIds.push(fallbackTimerId);
 }
 
-function enqueueSound(audio) {
+function scheduleEvaluationStep(nextStep, delayMs = 280) {
+  const timerId = setTimeout(nextStep, delayMs);
+  evaluationAnimationTimerIds.push(timerId);
+}
+
+function stopSound(audio) {
   if (!audio) {
     return;
   }
-  queuedSounds.push(audio);
-  if (!activeQueuedSound) {
-    playNextQueuedSound();
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+  } catch (_error) {
+    // Ignore stop failures.
   }
 }
 
 function stopEvaluationSounds() {
-  queuedSounds = [];
-  activeQueuedSound = null;
-  [...starSounds, completeSound, errorSound].forEach((audio) => {
-    if (!audio) {
-      return;
-    }
-    try {
-      audio.pause();
-      audio.currentTime = 0;
-    } catch (_error) {
-      // Ignore stop failures.
-    }
-  });
+  [...starSounds, completeSound, errorSound].forEach(stopSound);
 }
 
 function shouldUseFixedScaleLayout() {
@@ -333,31 +335,36 @@ function openEvaluationModal(spotIds) {
     { key: "demand", shouldLight: demand.ok }
   ];
 
-  sequence.forEach((entry, index) => {
-    const timerId = setTimeout(() => {
-      const item = evaluationGrid.querySelector(`[data-criteria='${entry.key}']`);
-      if (!item) {
-        return;
-      }
-      if (entry.shouldLight) {
-        item.classList.add("is-lit");
-        enqueueSound(starSounds[index]);
-        if (index === sequence.length - 1) {
-          enqueueSound(completeSound);
-        }
-      } else {
-        item.classList.add("is-off");
-      }
-    }, 280 * (index + 1));
-    evaluationAnimationTimerIds.push(timerId);
-  });
-
-  const hintTimerId = setTimeout(() => {
+  const showHint = () => {
     evaluationHint.textContent = demand.ok
       ? `恭喜你成为了四星讲解员。${demand.detail}`
       : `再看看老师的需求哦？${demand.detail}`;
-  }, 280 * (sequence.length + 1));
-  evaluationAnimationTimerIds.push(hintTimerId);
+  };
+
+  const runStep = (index) => {
+    if (index >= sequence.length) {
+      playSoundAndWait(completeSound, showHint, 420);
+      return;
+    }
+
+    const entry = sequence[index];
+    const item = evaluationGrid.querySelector(`[data-criteria='${entry.key}']`);
+    if (!item) {
+      scheduleEvaluationStep(() => runStep(index + 1));
+      return;
+    }
+
+    if (!entry.shouldLight) {
+      item.classList.add("is-off");
+      scheduleEvaluationStep(() => runStep(index + 1));
+      return;
+    }
+
+    item.classList.add("is-lit");
+    playSoundAndWait(starSounds[index], () => runStep(index + 1));
+  };
+
+  scheduleEvaluationStep(() => runStep(0), 160);
 }
 
 function openEvaluationErrorModal(errorText) {
