@@ -260,6 +260,7 @@ function evaluateDemandMatch(spotIds) {
   const dinosaurCornerId = findSpotIdByDisplayName("恐龙角") || "DinosaurCorner";
   const footballParkId = findSpotIdByDisplayName("足球乐园") || "FootballPark";
   const mottoStoneId = findSpotIdByDisplayName("校训石");
+  const youngSwallowsSoarId = findSpotIdByDisplayName("雏燕奋飞") || "YoungSwallowsSoar";
   const friendshipPavilionId = findSpotIdByDisplayName("友谊之亭") || "FriendshipPavilion";
 
   if (currentMode === "art") {
@@ -302,20 +303,32 @@ function evaluateDemandMatch(spotIds) {
     if (!mottoStoneId) {
       return {
         ok: false,
-        demandText: "必须从校训石出发且经过足球乐园",
-        detail: "当前数据未找到“校训石”点位，请先在地点数据中配置。"
+        demandText: "必须从校训石出发，向北到足球乐园，向北到恐龙角，再向西到雏燕奋飞",
+        detail: ""
       };
     }
 
-    const startsFromMottoStone = spotIds[0] === mottoStoneId;
-    const passesFootballPark = spotIds.includes(footballParkId);
-    const ok = startsFromMottoStone && passesFootballPark;
+    const requiredSpotPath = [
+      mottoStoneId,
+      footballParkId,
+      dinosaurCornerId,
+      youngSwallowsSoarId
+    ];
+    const hasExactSpotPath =
+      spotIds.length === requiredSpotPath.length
+      && requiredSpotPath.every((spotId, index) => spotIds[index] === spotId);
+
+    const directionTokens = routeTokens.filter((token) => token.type === "direction").map((token) => token.value);
+    const requiredDirectionPath = ["N", "N", "W"];
+    const hasExactDirectionPath =
+      directionTokens.length === requiredDirectionPath.length
+      && requiredDirectionPath.every((dirCode, index) => directionTokens[index] === dirCode);
+
+    const ok = hasExactSpotPath && hasExactDirectionPath;
     return {
       ok,
-      demandText: "必须从校训石出发且经过足球乐园",
-      detail: ok
-        ? "已从校训石出发，且经过足球乐园。"
-        : `当前结果：${startsFromMottoStone ? "已从校训石出发" : "未从校训石出发"}，${passesFootballPark ? "已经过足球乐园" : "未经过足球乐园"}。`
+      demandText: "必须从校训石出发，向北到足球乐园，向北到恐龙角，再向西到雏燕奋飞",
+      detail: ok ? "已满足体育老师路线要求。" : ""
     };
   }
 
