@@ -532,6 +532,8 @@ button {
   color: #334155;
   min-height: 28px;
   white-space: pre-line;
+  font-size: 20px;
+
 }
 
 .calibration-tools {
