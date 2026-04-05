@@ -11,8 +11,8 @@
 		"DonutGarden": "E"
 	},
 	"offset": {
-		"dx": 62,
-		"dy": -230
+		"dx": 0,
+		"dy": -66
 	}
 	},
 	"DinosaurCorner": {
@@ -29,7 +29,7 @@
 		"FootballPark": "S"
 	},
 	"offset": {
-		"dx": 16,
+		"dx": 112,
 		"dy": -23
 	}
 	},
@@ -45,8 +45,8 @@
 		"FriendshipPavilion": "W"
 	},
 	"offset": {
-		"dx": 19,
-		"dy": -191
+		"dx": 112,
+		"dy": -21
 	}
 	},
 	"ArtSpace": {
@@ -64,8 +64,8 @@
 		"DinosaurCorner": "S"
 	},
 	"offset": {
-		"dx": 23,
-		"dy": -3
+		"dx": 112,
+		"dy": -26
 	}
 	},
 	"FootballPark": {
@@ -80,8 +80,8 @@
 		"DonutGarden": "S"
 	},
 	"offset": {
-		"dx": 8,
-		"dy": -104
+		"dx": 112,
+		"dy": -85
 	}
 	},
 	"YoungSwallowsSoar": {
@@ -101,8 +101,8 @@
 		"FriendshipPavilion": "S"
 	},
 	"offset": {
-		"dx": 165,
-		"dy": 22
+		"dx": 147,
+		"dy": 110
 	}
 	}
 }
