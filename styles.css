@@ -159,6 +159,7 @@ body.fixed-scale-layout .scale-target.is-active {
 
 .topbar p {
   margin: 0;
+  font-size: 20px;
   opacity: 0.95;
 }
 
