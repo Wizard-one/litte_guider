@@ -687,8 +687,8 @@ button {
 }
 
 .evaluation-hint-avatar {
-  width: 54px;
-  height: 54px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
   flex: 0 0 auto;
 }
