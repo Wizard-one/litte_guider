@@ -15,7 +15,6 @@
 
 * {
   box-sizing: border-box;
-  font-size: 30px;
 }
 
 body {
@@ -488,6 +487,9 @@ button {
   border-radius: 12px;
   border: 1px solid #bfdbfe;
   background: #f8fafc;
+}
+
+#campusMap > image:first-of-type {
   opacity: 0.8;
 }
 
