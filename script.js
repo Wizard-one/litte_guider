@@ -257,8 +257,8 @@ function openEvaluationModal(spotIds) {
 
   const hintTimerId = setTimeout(() => {
     evaluationHint.textContent = demand.ok
-      ? `符合需求：是。${demand.detail}`
-      : `符合需求：否。${demand.detail}`;
+      ? `恭喜你成为了四星讲解员。${demand.detail}`
+      : `再看看老师的需求哦？${demand.detail}`;
   }, 280 * (sequence.length + 1));
   evaluationAnimationTimerIds.push(hintTimerId);
 }
