@@ -370,6 +370,12 @@ body.fixed-scale-layout .scale-target.is-active {
   box-shadow: 0 10px 24px rgba(30, 64, 175, 0.22);
 }
 
+.touch-drag-ghost.touch-ghost-item {
+  margin: 0;
+  max-width: min(46vw, 240px);
+  overflow: hidden;
+}
+
 .trash-drop-zone {
   border: 1px dashed #cbd5e1;
   border-radius: 10px;

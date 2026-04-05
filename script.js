@@ -1285,14 +1285,62 @@ function detectTouchDropTarget(clientX, clientY) {
   return null;
 }
 
+function createTouchDragGhost(payload, sourceElement) {
+  if (!sourceElement) {
+    return null;
+  }
+
+  if (payload.type === "spot") {
+    const ghost = document.createElement("button");
+    ghost.type = "button";
+    ghost.className = "drag-item spot-item touch-ghost-item";
+
+    const thumb = document.createElement("img");
+    thumb.className = "spot-thumb";
+    const sourceImg = sourceElement.querySelector(".spot-thumb");
+    const fallbackSrc = spotById[payload.value]?.image ? `img/${encodeURIComponent(spotById[payload.value].image)}` : "";
+    thumb.src = sourceImg?.getAttribute("src") || fallbackSrc;
+    thumb.alt = spotById[payload.value]?.displayName || "景点";
+    thumb.draggable = false;
+
+    const name = document.createElement("span");
+    name.className = "spot-name";
+    const sourceName = sourceElement.querySelector(".spot-name")?.textContent?.trim();
+    name.textContent = sourceName || spotById[payload.value]?.displayName || payload.value;
+
+    ghost.appendChild(thumb);
+    ghost.appendChild(name);
+    return ghost;
+  }
+
+  if (payload.type === "direction") {
+    const ghost = document.createElement("button");
+    ghost.type = "button";
+    ghost.className = "drag-item dir-item touch-ghost-item";
+    ghost.textContent = sourceElement.textContent?.trim() || DIRECTIONS[payload.value]?.label || payload.value;
+    return ghost;
+  }
+
+  const ghost = sourceElement.cloneNode(true);
+  ghost.classList.remove("is-used");
+  return ghost;
+}
+
 function beginTouchDrag(clientX, clientY) {
   if (!touchDragState || touchDragState.isDragging) {
     return;
   }
 
-  const ghost = touchDragState.sourceElement.cloneNode(true);
+  const ghost = createTouchDragGhost(touchDragState.payload, touchDragState.sourceElement);
+  if (!ghost) {
+    return;
+  }
+
+  const sourceRect = touchDragState.sourceElement.getBoundingClientRect();
   ghost.classList.add("touch-drag-ghost");
   ghost.style.position = "fixed";
+  ghost.style.width = `${Math.max(48, sourceRect.width)}px`;
+  ghost.style.height = `${Math.max(40, sourceRect.height)}px`;
   ghost.style.left = `${clientX}px`;
   ghost.style.top = `${clientY}px`;
   ghost.style.transform = "translate(-50%, -50%)";
