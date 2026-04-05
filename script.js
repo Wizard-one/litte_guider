@@ -960,7 +960,7 @@ function getLatestSegmentFromTokens() {
 function addRouteToken(token) {
   const validation = validateDropToken(token);
   if (!validation.ok) {
-    setMessage(validation.reason, "warn");
+    setMessage(validation.reason, "bad");
     return;
   }
 

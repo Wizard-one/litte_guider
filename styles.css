@@ -687,8 +687,8 @@ button {
 .evaluation-modal.is-error .evaluation-hint {
   margin-top: 0;
   min-height: 0;
-  color: #b91c1c;
-  font-size: 26px;
+  color: var(--bad);
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.35;
 }
