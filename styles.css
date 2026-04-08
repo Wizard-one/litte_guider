@@ -494,6 +494,14 @@ button {
   position: relative;
 }
 
+.map-direction-overlay {
+  position: absolute;
+  width: clamp(72px, 14vw, 150px);
+  height: auto;
+  z-index: 4;
+  pointer-events: none;
+}
+
 .spot-overlay {
   position: absolute;
   right: 12px;
@@ -797,6 +805,12 @@ button {
     right: 8px;
     bottom: 8px;
     padding: 8px;
+  }
+
+  .map-direction-overlay {
+    top: 8px;
+    left: 8px;
+    width: clamp(64px, 18vw, 120px);
   }
 
   .spot-image {
