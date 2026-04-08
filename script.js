@@ -62,7 +62,7 @@ const MODE_CONFIG = {
   },
   custom: {
     title: "🗺️ 设计专属路线",
-    subtitle: "请按“地点 → 方向 → 地点”拖拽路线，系统会按地图道路播放你的移动路线哦。"
+    subtitle: "【请按“地点 → 方向 → 地点”拖拽路线，系统会按地图道路播放你的移动路线哦。】"
   }
 };
 
@@ -303,31 +303,24 @@ function evaluateDemandMatch(spotIds) {
     if (!mottoStoneId) {
       return {
         ok: false,
-        demandText: "必须从校训石出发，向北到足球乐园，随后访问两个其他地点",
+        demandText: "必须从校训石出发，向北前往足球乐园，接着继续参观校园其他2处风景",
         detail: ""
       };
     }
 
-    const requiredSpotPath = [
-      mottoStoneId,
-      footballParkId,
-      dinosaurCornerId,
-      youngSwallowsSoarId
-    ];
-    const hasExactSpotPath =
-      spotIds.length === requiredSpotPath.length
-      && requiredSpotPath.every((spotId, index) => spotIds[index] === spotId);
+    // Check that route has exactly 4 spots (mottoStone, footballPark, and 2 others)
+    const hasCorrectSpotCount = spotIds.length === 4;
+    const startSpotCorrect = spotIds.length > 0 && spotIds[0] === mottoStoneId;
+    const secondSpotCorrect = spotIds.length > 1 && spotIds[1] === footballParkId;
 
+    // Check that first direction is North
     const directionTokens = routeTokens.filter((token) => token.type === "direction").map((token) => token.value);
-    const requiredDirectionPath = ["N", "N", "W"];
-    const hasExactDirectionPath =
-      directionTokens.length === requiredDirectionPath.length
-      && requiredDirectionPath.every((dirCode, index) => directionTokens[index] === dirCode);
+    const firstDirectionCorrect = directionTokens.length > 0 && directionTokens[0] === "N";
 
-    const ok = hasExactSpotPath && hasExactDirectionPath;
+    const ok = hasCorrectSpotCount && startSpotCorrect && secondSpotCorrect && firstDirectionCorrect;
     return {
       ok,
-      demandText: "必须从校训石出发，向北到足球乐园，随后访问两个其他地点",
+      demandText: "必须从校训石出发，向北前往足球乐园，接着继续参观校园其他2处风景",
       detail: ok ? "已满足体育老师路线要求。" : ""
     };
   }
