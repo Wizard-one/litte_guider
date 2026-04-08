@@ -58,7 +58,7 @@ const MODE_CONFIG = {
   },
   sport: {
     title: "⚽ 帮助体育老师规划运动路线",
-    subtitle: "【我在校训石拍完照，想去参观足球乐园和恐龙角，最后回到雏燕奋飞】"
+    subtitle: "【我在校训石拍完照，先前往足球乐园，接着继续参观校园其他2处风景】"
   },
   custom: {
     title: "🗺️ 设计专属路线",
@@ -303,7 +303,7 @@ function evaluateDemandMatch(spotIds) {
     if (!mottoStoneId) {
       return {
         ok: false,
-        demandText: "必须从校训石出发，向北到足球乐园，向北到恐龙角，再向西到雏燕奋飞",
+        demandText: "必须从校训石出发，向北到足球乐园，随后访问两个其他地点",
         detail: ""
       };
     }
@@ -327,7 +327,7 @@ function evaluateDemandMatch(spotIds) {
     const ok = hasExactSpotPath && hasExactDirectionPath;
     return {
       ok,
-      demandText: "必须从校训石出发，向北到足球乐园，向北到恐龙角，再向西到雏燕奋飞",
+      demandText: "必须从校训石出发，向北到足球乐园，随后访问两个其他地点",
       detail: ok ? "已满足体育老师路线要求。" : ""
     };
   }
