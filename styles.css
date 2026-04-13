@@ -708,6 +708,25 @@ button {
   color: #facc15;
 }
 
+.self-evaluation-modal .evaluation-star {
+  color: #ffffff;
+  transform: scale(1);
+}
+
+.self-evaluation-modal .evaluation-item {
+  cursor: pointer;
+}
+
+.self-evaluation-modal .evaluation-item.is-lit .evaluation-star {
+  color: #facc15;
+  animation: star-pop 0.32s ease;
+}
+
+.self-evaluation-modal .evaluation-item.is-lit .evaluation-label {
+  opacity: 1;
+  color: #facc15;
+}
+
 .evaluation-item.is-off {
   background: #334155;
 }

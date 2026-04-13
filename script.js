@@ -45,6 +45,9 @@ const backToWelcomeBtn = document.getElementById("backToWelcomeBtn");
 const entryCards = document.querySelectorAll(".entry-card");
 const appModeTitle = document.getElementById("appModeTitle");
 const appModeSubtitle = document.getElementById("appModeSubtitle");
+const selfEvaluationModal = document.getElementById("selfEvaluationModal");
+const selfEvaluationGrid = document.getElementById("selfEvaluationGrid");
+const selfEvaluationCloseBtn = document.getElementById("selfEvaluationCloseBtn");
 const evaluationModal = document.getElementById("evaluationModal");
 const evaluationGrid = document.getElementById("evaluationGrid");
 const evaluationHint = document.getElementById("evaluationHint");
@@ -78,6 +81,7 @@ let loadedLocations = {};
 let touchDragState = null;
 let currentMode = "custom";
 let evaluationAnimationTimerIds = [];
+let pendingEvaluationSpotIds = null;
 
 const ARRIVAL_DWELL_MS = 700;
 const TOUCH_DRAG_THRESHOLD = 8;
@@ -345,6 +349,58 @@ function resetEvaluationItems() {
   evaluationGrid.querySelectorAll(".evaluation-item").forEach((item) => {
     item.classList.remove("is-lit", "is-off");
   });
+}
+
+function resetSelfEvaluationItems() {
+  if (!selfEvaluationGrid) {
+    return;
+  }
+  selfEvaluationGrid.querySelectorAll(".evaluation-item").forEach((item) => {
+    item.classList.remove("is-lit", "is-off");
+  });
+}
+
+function openSelfEvaluationModal(spotIds) {
+  if (!selfEvaluationModal) {
+    openEvaluationModal(spotIds);
+    return;
+  }
+  pendingEvaluationSpotIds = Array.isArray(spotIds) ? [...spotIds] : [];
+  resetSelfEvaluationItems();
+  selfEvaluationModal.classList.add("is-open");
+  selfEvaluationModal.setAttribute("aria-hidden", "false");
+}
+
+function closeSelfEvaluationModal(openFormalEvaluation = true) {
+  if (!selfEvaluationModal) {
+    return;
+  }
+
+  selfEvaluationModal.classList.remove("is-open");
+  selfEvaluationModal.setAttribute("aria-hidden", "true");
+
+  const spotIdsToEvaluate = pendingEvaluationSpotIds;
+  pendingEvaluationSpotIds = null;
+  if (openFormalEvaluation && Array.isArray(spotIdsToEvaluate)) {
+    openEvaluationModal(spotIdsToEvaluate);
+  }
+}
+
+function handleSelfEvaluationGridClick(event) {
+  if (!selfEvaluationGrid) {
+    return;
+  }
+
+  const label = event.target.closest(".evaluation-label");
+  if (!label || !selfEvaluationGrid.contains(label)) {
+    return;
+  }
+
+  const item = label.closest(".evaluation-item");
+  if (!item) {
+    return;
+  }
+  item.classList.add("is-lit");
 }
 
 function openEvaluationModal(spotIds) {
@@ -1060,6 +1116,7 @@ function resetAll() {
   resetAvatar();
   resetSpotCard();
   setSpotOverlayVisible(false);
+  closeSelfEvaluationModal(false);
   closeEvaluationModal();
   stepInfo.textContent = "等待提交路线...";
   setMessage("已重置全部内容。", "info");
@@ -1242,7 +1299,7 @@ function handleStart() {
 
   animatePath(spotIds, () => {
     setMessage("路线播放完成，请查看星级评价。", "ok");
-    openEvaluationModal(spotIds);
+    openSelfEvaluationModal(spotIds);
   });
 }
 
@@ -1724,6 +1781,19 @@ async function init() {
     evaluationModal.addEventListener("click", (event) => {
       if (event.target === evaluationModal) {
         closeEvaluationModal();
+      }
+    });
+  }
+  if (selfEvaluationGrid) {
+    selfEvaluationGrid.addEventListener("click", handleSelfEvaluationGridClick);
+  }
+  if (selfEvaluationCloseBtn) {
+    selfEvaluationCloseBtn.addEventListener("click", () => closeSelfEvaluationModal(true));
+  }
+  if (selfEvaluationModal) {
+    selfEvaluationModal.addEventListener("click", (event) => {
+      if (event.target === selfEvaluationModal) {
+        closeSelfEvaluationModal(true);
       }
     });
   }
